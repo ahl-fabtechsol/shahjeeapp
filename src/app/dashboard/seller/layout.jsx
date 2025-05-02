@@ -1,6 +1,5 @@
 import DashboardHeader from "@/components/dashboard/dashboardHeader";
 import { DashboardSidebar } from "@/components/dashboard/dashboardSidebar";
-import { ThemeProvider } from "@/components/theme-provider";
 import {
   Sidebar,
   SidebarInset,
@@ -14,21 +13,14 @@ export const metadata = {
 
 export default function SellerDashboardLayout({ children }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <SidebarProvider>
-        <Sidebar variant="inset">
-          <DashboardSidebar type="seller" />
-        </Sidebar>
-        <SidebarInset>
-          <DashboardHeader type="seller" />
-          <main className="p-4">{children}</main>
-        </SidebarInset>
-      </SidebarProvider>
-    </ThemeProvider>
+    <SidebarProvider>
+      <Sidebar variant="inset">
+        <DashboardSidebar type="seller" />
+      </Sidebar>
+      <SidebarInset>
+        <DashboardHeader type="seller" />
+        <main className="p-4">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

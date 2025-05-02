@@ -16,12 +16,6 @@ import { Filter } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Products | GlobalMarket",
-  description:
-    "Browse our wide range of products from verified suppliers worldwide",
-};
-
 export default function ProductsPage() {
   const products = [
     {
