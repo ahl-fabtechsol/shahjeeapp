@@ -39,7 +39,7 @@ export default function FeaturedProducts() {
   ];
 
   return (
-    <section className="w-full p-4">
+    <section className="w-full p-6 lg:px-32">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
@@ -57,7 +57,7 @@ export default function FeaturedProducts() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-6">
         {products.map((product) => (
           <Link
             href={`/products/${product.id}`}

@@ -49,7 +49,7 @@ export default function Categories() {
   ];
 
   return (
-    <section className="w-full p-4">
+    <section className="w-full p-6 lg:px-32">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-bold tracking-tight">Shop by Category</h2>
         <p className="text-muted-foreground mt-2 max-w-[700px] mx-auto">
@@ -57,7 +57,7 @@ export default function Categories() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 md:gap-6">
         {categories.map((category) => (
           <Link href={category.href} key={category.name}>
             <Card className="border-border/40 h-full transition-all hover:shadow-md">

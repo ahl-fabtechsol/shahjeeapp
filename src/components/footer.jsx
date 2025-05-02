@@ -4,7 +4,7 @@ import { Globe } from "lucide-react";
 export default function Footer() {
   return (
     <footer className="border-t bg-background">
-      <div className=" p-10">
+      <div className=" p-10 lg:px-32">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4">

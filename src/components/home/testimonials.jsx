@@ -30,7 +30,7 @@ export default function Testimonials() {
   ];
 
   return (
-    <section className="w-full p-4">
+    <section className="w-full p-6 lg:px-32">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-bold tracking-tight">
           What Our Customers Say
