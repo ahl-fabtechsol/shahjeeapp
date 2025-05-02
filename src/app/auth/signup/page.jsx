@@ -7,19 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function Login() {
+export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <>
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-semibold text-black">Log In</h1>
-        <p className="mt-2 text-sm text-gray-600 text-center">
-          Welcome Back, Glad to see you again! <br /> Login to your account.
+        <h1 className="text-2xl font-semibold text-black">Create an Account</h1>
+        <p className="mt-2 text-sm text-gray-600">
+          Hello 👋, Register to Auto Vision to get started.
         </p>
       </div>
 
       <form className="space-y-4">
+        <div className="">
+          <Label className="text-sm font-medium textblack mb-1">Name</Label>
+          <Input type="text" placeholder="Enter your full name" />
+        </div>
+
         <div className="">
           <Label className="text-sm font-medium text-black mb-1">
             Email Address
@@ -29,14 +34,20 @@ export default function Login() {
 
         <div className="">
           <Label className="text-sm font-medium text-black mb-1">
+            Phone Number
+          </Label>
+          <Input type="tel" placeholder="Enter your phone number" />
+        </div>
+
+        <div className="">
+          <Label className="text-sm font-medium text-black mb-1">
             Password
           </Label>
-
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder="Create a strong password"
               className="w-full rounded-md border border-gray-200 pr-10"
             />
             <button
@@ -48,17 +59,9 @@ export default function Login() {
             </button>
           </div>
         </div>
-        <div className="flex justify-end">
-          <Link
-            href="/auth/forget-password"
-            className="text-xs font-medium text-primary"
-          >
-            Forgot password?
-          </Link>
-        </div>
-        <Link href="/">
+        <Link href="/login">
           <Button type="submit" className="w-full">
-            Log In
+            Sign Up
           </Button>
         </Link>
 
@@ -69,9 +72,9 @@ export default function Login() {
           <div className="relative">
             <span className="bg-white px-4 text-sm text-gray-500">or</span>
           </div>
-        </div> */}
+        </div>
 
-        {/* <button
+        <button
           type="button"
           className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
@@ -102,12 +105,9 @@ export default function Login() {
         </button> */}
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          New to Auto-Vision ?{" "}
-          <Link
-            href="/auth/signup"
-            className="font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            Sign Up
+          Already have an account?{" "}
+          <Link href="/auth/login" className="font-medium text-primary">
+            Log In
           </Link>
         </p>
       </form>

@@ -1,31 +1,26 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { Search, ShoppingCart, User, Menu, Globe } from "lucide-react";
+import { ShoppingCart, User, Menu, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Header() {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
 
   const routes = [
     { href: "/", label: "Home" },
     { href: "/products", label: "All Products" },
-    { href: "/categories", label: "Categories" },
     { href: "/sellers", label: "Sellers" },
+    { href: "/deals", label: "Deals" },
     { href: "/about", label: "About Us" },
   ];
 
@@ -82,49 +77,6 @@ export default function Header() {
 
           <NavigationMenu className="hidden lg:flex">
             <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Catagories</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
-                    {[
-                      {
-                        label: "Electronics",
-                        description: "Phones, laptops, and gadgets",
-                        href: "/categories/electronics",
-                      },
-                      {
-                        label: "Fashion",
-                        description: "Clothing, shoes, and accessories",
-                        href: "/categories/fashion",
-                      },
-                      {
-                        label: "Home & Garden",
-                        description: "Furniture, decor, and appliances",
-                        href: "/categories/home",
-                      },
-                      {
-                        label: "Beauty",
-                        description: "Skincare, makeup, and personal care",
-                        href: "/categories/beauty",
-                      },
-                    ].map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="flex p-2 hover:bg-muted rounded-md"
-                      >
-                        <div className="flex flex-col gap-1">
-                          <div className="font-medium">{item.label}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {item.description}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
@@ -187,33 +139,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {isSearchOpen ? (
-            <div className="flex items-center">
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="w-[200px] md:w-[300px]"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsSearchOpen(false)}
-              >
-                <span className="sr-only">Close search</span>
-                &times;
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsSearchOpen(true)}
-            >
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
-            </Button>
-          )}
-
           <Link href="/auth/login">
             <Button variant="ghost" size="icon">
               <User className="h-5 w-5" />
