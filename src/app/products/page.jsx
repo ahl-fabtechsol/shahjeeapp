@@ -1,9 +1,11 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Filter, Search, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -11,12 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Filter } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import FilterSidebar from "./(components)/filterSidebar";
+import ProductCard from "./(components)/productCard";
+import ProductSkeleton from "./(components)/productSkeleton";
 
 export default function ProductsPage() {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("featured");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const products = [
     {
       id: 1,
@@ -96,102 +111,71 @@ export default function ProductsPage() {
     },
   ];
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilteredProducts(products);
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
   return (
-    <div className=" py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-        {/* Sidebar Filters */}
+    <div className="p-6 md:px-16 lg:px-32">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col md:flex-row justify-between items-start gap-6"
+      >
         <div className="w-full md:w-64 space-y-6">
           <div className="flex items-center justify-between md:hidden">
             <h2 className="text-lg font-semibold">Filters</h2>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                  <SheetDescription>
+                    Refine your product search with these filters.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="py-4">
+                  <FilterSidebar isMobile={true} />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
 
-          <div className="hidden md:block space-y-6">
-            <div>
-              <h3 className="font-medium mb-3">Categories</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="electronics" />
-                  <Label htmlFor="electronics">Electronics</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="fashion" />
-                  <Label htmlFor="fashion">Fashion</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="home" />
-                  <Label htmlFor="home">Home & Garden</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="beauty" />
-                  <Label htmlFor="beauty">Beauty</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="sports" />
-                  <Label htmlFor="sports">Sports & Fitness</Label>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-3">Price Range</h3>
-              <Slider defaultValue={[0, 500]} min={0} max={1000} step={10} />
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-sm">$0</span>
-                <span className="text-sm">$1000</span>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-3">Rating</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="rating4" />
-                  <Label htmlFor="rating4">4★ & above</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="rating3" />
-                  <Label htmlFor="rating3">3★ & above</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="rating2" />
-                  <Label htmlFor="rating2">2★ & above</Label>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-3">Shipping</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="freeShipping" />
-                  <Label htmlFor="freeShipping">Free Shipping</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="sameDay" />
-                  <Label htmlFor="sameDay">Same Day Delivery</Label>
-                </div>
-              </div>
-            </div>
-
-            <Button className="w-full">Apply Filters</Button>
+          <div className="hidden md:block">
+            <FilterSidebar isMobile={false} />
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div className="flex-1 w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex flex-col xl:flex-row justify-between items-start sm:items-center mb-6"
+          >
             <h1 className="text-2xl font-bold">All Products</h1>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-4 sm:mt-0 w-full sm:w-auto">
               <div className="relative w-full sm:w-[250px]">
-                <Input placeholder="Search products..." />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
 
-              <Select defaultValue="featured">
+              <Select value={sortOption} onValueChange={setSortOption}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -204,123 +188,77 @@ export default function ProductsPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <Link
-                href={`/products/${product.id}`}
-                key={product.id}
-                className="group"
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
               >
-                <Card className="overflow-hidden border-border/40 transition-all hover:shadow-md h-full">
-                  <div className="relative aspect-square">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform group-hover:scale-105"
-                    />
-                    {product.badge && (
-                      <Badge className="absolute top-2 right-2 z-10">
-                        {product.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      {product.category}
-                    </div>
-                    <h3 className="font-medium text-lg truncate">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center mt-1">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < Math.floor(product.rating)
-                                ? "text-yellow-500 fill-yellow-500"
-                                : i < product.rating
-                                ? "text-yellow-500 fill-yellow-500"
-                                : "text-gray-300"
-                            }`}
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground ml-1">
-                        ({product.reviews})
-                      </span>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 pt-0 flex justify-between items-center">
-                    <div className="font-semibold">
-                      ${product.price.toFixed(2)}
-                    </div>
-                  </CardFooter>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                {[...Array(8)].map((_, index) => (
+                  <ProductSkeleton key={index} index={index} />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="products"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+              >
+                {filteredProducts.map((product, index) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={index}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <div className="flex justify-center mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex justify-center mt-8"
+          >
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button variant="outline" size="icon">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </motion.div>
+
+              {[1, 2, 3, 4, 5].map((page) => (
+                <motion.div
+                  key={page}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </Button>
-              <Button variant="outline" size="sm" className="w-10">
-                1
-              </Button>
-              <Button variant="outline" size="sm" className="w-10">
-                2
-              </Button>
-              <Button variant="outline" size="sm" className="w-10">
-                3
-              </Button>
-              <Button variant="outline" size="sm" className="w-10">
-                4
-              </Button>
-              <Button variant="outline" size="sm" className="w-10">
-                5
-              </Button>
-              <Button variant="outline" size="icon">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </Button>
+                  <Button
+                    variant={page === 1 ? "default" : "outline"}
+                    size="sm"
+                    className="w-10"
+                  >
+                    {page}
+                  </Button>
+                </motion.div>
+              ))}
+
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button variant="outline" size="icon">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
