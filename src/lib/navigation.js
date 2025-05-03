@@ -14,8 +14,6 @@ import {
   Heart,
   User,
   Truck,
-  DollarSign,
-  Tag,
   MessageSquare,
 } from "lucide-react";
 
@@ -66,9 +64,9 @@ const adminRoutes = [
     icon: Lock,
   },
   {
-    title: "Database",
-    url: "/dashboard/admin/database",
-    icon: Database,
+    title: "Feedbacks",
+    url: "/dashboard/admin/feedbacks",
+    icon: MessageSquare,
   },
 ];
 
