@@ -12,7 +12,6 @@ import {
   ShoppingCart,
   Package,
   Heart,
-  CreditCard,
   User,
   Truck,
   DollarSign,
@@ -85,19 +84,9 @@ const buyerRoutes = [
     icon: ShoppingCart,
   },
   {
-    title: "Tracking",
-    url: "/dashboard/buyer/tracking",
-    icon: Package,
-  },
-  {
     title: "Wishlist",
     url: "/dashboard/buyer/wishlist",
     icon: Heart,
-  },
-  {
-    title: "Payment Methods",
-    url: "/dashboard/buyer/payment",
-    icon: CreditCard,
   },
   {
     title: "Profile",
@@ -143,18 +132,8 @@ const sellerRoutes = [
     icon: BarChart2,
   },
   {
-    title: "Finances",
-    url: "/dashboard/seller/finances",
-    icon: DollarSign,
-  },
-  {
-    title: "Marketing",
-    url: "/dashboard/seller/marketing",
-    icon: Tag,
-  },
-  {
-    title: "Messages",
-    url: "/dashboard/seller/messages",
+    title: "Feedbacks",
+    url: "/dashboard/seller/feedbacks",
     icon: MessageSquare,
   },
   {

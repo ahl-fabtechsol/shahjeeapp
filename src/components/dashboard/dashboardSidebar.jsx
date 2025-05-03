@@ -30,7 +30,14 @@ export function DashboardSidebar({ type }) {
             <span className="text-lg font-semibold my-2">V</span>
           ) : (
             <span className="text-lg font-bold text-primary header-font">
-              Lorem Ipsum
+              {type === "buyer"
+                ? "Buyer"
+                : type === "admin"
+                ? "Admin"
+                : type === "seller"
+                ? "Seller"
+                : "Lorem Ipsum"}{" "}
+              Dashboard
             </span>
           )}
         </div>

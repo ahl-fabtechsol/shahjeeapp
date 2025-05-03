@@ -8,7 +8,7 @@ import { SellerDetail } from "../(components)/sellerDetail";
 export default function SellerDetails() {
   const id = useParams().id;
   return (
-    <div className="container mx-auto py-10">
+    <div className="mx-auto p-6 sm:px-16 xl:px-32">
       <Link href="/">
         <Button variant="ghost" className="mb-6 gap-2">
           <ArrowLeft className="h-4 w-4" />
