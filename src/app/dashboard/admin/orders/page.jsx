@@ -54,6 +54,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CustomTable } from "@/components/customTable";
 
 const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
@@ -280,6 +281,133 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const tableColumns = [
+    {
+      id: "select",
+      accessorKey: "id",
+      header: () => (
+        <Checkbox
+          checked={
+            selectedOrders.length === filteredOrders.length &&
+            filteredOrders.length > 0
+          }
+          onCheckedChange={handleSelectAll}
+        />
+      ),
+      cell: (info) => (
+        <Checkbox
+          checked={isSelected(info.row.original.id)}
+          onCheckedChange={() => handleSelectOrder(info.row.original.id)}
+        />
+      ),
+    },
+    {
+      id: "orderId",
+      accessorKey: "id",
+      header: () => <div className="flex items-center">Order ID</div>,
+      cell: (info) => (
+        <div className="flex items-center">
+          {info.getValue()}
+          {info.row.original.disputed && (
+            <AlertCircle
+              className="h-4 w-4 text-red-500 ml-2"
+              title="Disputed Order"
+            />
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "customer",
+      accessorKey: "customer.name",
+      header: () => <div>Customer</div>,
+      cell: (info) => (
+        <div className="flex flex-col">
+          <div>{info.getValue()}</div>
+          <div className="text-xs text-muted-foreground hidden sm:block">
+            {info.row.original.customer.email}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "seller",
+      accessorKey: "seller.name",
+      header: () => <div>Seller</div>,
+      cell: (info) => <div>{info.getValue()}</div>,
+    },
+    {
+      id: "date",
+      accessorKey: "date",
+      header: () => <div>Date</div>,
+      cell: (info) => (
+        <div className="hidden sm:flex items-center">
+          <Calendar className="h-4 w-4 mr-2" />
+          {info.getValue()}
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: () => <div>Status</div>,
+      cell: (info) => (
+        <Badge variant="outline" className={getStatusColor(info.getValue())}>
+          {info.getValue()}
+        </Badge>
+      ),
+    },
+    {
+      id: "payment",
+      accessorKey: "payment",
+      header: () => <div>Payment</div>,
+      cell: (info) => (
+        <Badge variant="outline" className={getPaymentColor(info.getValue())}>
+          {info.getValue()}
+        </Badge>
+      ),
+    },
+    {
+      id: "total",
+      accessorKey: "total",
+      header: () => <div>Total</div>,
+      cell: (info) => (
+        <div className="flex flex-col">
+          <div>${info.getValue().toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground hidden sm:block">
+            {info.row.original.items} items
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      cell: (info) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem>
+              <Eye className="h-4 w-4 mr-2" /> View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Package className="h-4 w-4 mr-2" /> Update Status
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Truck className="h-4 w-4 mr-2" /> Shipping Info
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
   return (
     <div className="p-4">
       <style>{noScrollbarStyle}</style>
@@ -293,13 +421,10 @@ export default function AdminOrdersPage() {
               Monitor and manage orders across all sellers.
             </p>
           </div>
-          <Button className="sm:w-auto">
-            <Download className="h-4 w-4 mr-2" /> Export Orders
-          </Button>
         </div>
 
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
-          <Card className="lg:col-span-1">
+        <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">
+          <Card className="2xl:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>Order Summary</CardTitle>
               <CardDescription>Quick overview of all orders</CardDescription>
@@ -390,57 +515,26 @@ export default function AdminOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-3">
+          <Card className="2xl:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex justify-between items-center gap-2">
                 <CardTitle>Order Management</CardTitle>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" /> Filter by Date
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <Clock className="h-4 w-4 mr-2" /> Recent Orders
-                  </Button>
-                </div>
+                <Select className="">
+                  <SelectTrigger className="">
+                    <SelectValue placeholder="Filter orders..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Orders</SelectItem>
+                    <SelectItem value="active">Pending</SelectItem>
+                    <SelectItem value="inactive">Processing</SelectItem>
+                    <SelectItem value="suspended">Delivered</SelectItem>
+                    <SelectItem value="unverified">Cancelled</SelectItem>
+                    <SelectItem value="unverified">Disputed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 overflow-hidden">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="overflow-x-auto flex w-full pb-1 mb-1 no-scrollbar">
-                    <TabsTrigger value="all" className="flex-shrink-0">
-                      All Orders
-                    </TabsTrigger>
-                    <TabsTrigger value="pending" className="flex-shrink-0">
-                      Pending
-                    </TabsTrigger>
-                    <TabsTrigger value="processing" className="flex-shrink-0">
-                      Processing
-                    </TabsTrigger>
-                    <TabsTrigger value="shipped" className="flex-shrink-0">
-                      Shipped
-                    </TabsTrigger>
-                    <TabsTrigger value="delivered" className="flex-shrink-0">
-                      Delivered
-                    </TabsTrigger>
-                    <TabsTrigger value="cancelled" className="flex-shrink-0">
-                      Cancelled
-                    </TabsTrigger>
-                    <TabsTrigger value="disputed" className="flex-shrink-0">
-                      Disputed
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -452,253 +546,18 @@ export default function AdminOrdersPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                  <Select defaultValue="newest">
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest first</SelectItem>
-                      <SelectItem value="oldest">Oldest first</SelectItem>
-                      <SelectItem value="highest">Highest value</SelectItem>
-                      <SelectItem value="lowest">Lowest value</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">
-                        <Checkbox
-                          checked={
-                            selectedOrders.length === filteredOrders.length &&
-                            filteredOrders.length > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap">
-                        <div className="flex items-center">
-                          Order ID
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap">
-                        Customer
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap hidden md:table-cell">
-                        Seller
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
-                        Date
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap">
-                        Status
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
-                        Payment
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap">Total</TableHead>
-                      <TableHead className="text-right whitespace-nowrap">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOrders.map((order) => (
-                      <motion.tr
-                        key={order.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="group"
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={isSelected(order.id)}
-                            onCheckedChange={() => handleSelectOrder(order.id)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium whitespace-nowrap">
-                          <div className="flex items-center">
-                            {order.id}
-                            {order.disputed && (
-                              <AlertCircle
-                                className="h-4 w-4 text-red-500 ml-2"
-                                title="Disputed Order"
-                              />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <div>{order.customer.name}</div>
-                          <div className="text-xs text-muted-foreground hidden sm:block">
-                            {order.customer.email}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap hidden md:table-cell">
-                          {order.seller.name}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap hidden sm:table-cell">
-                          {order.date}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge
-                            variant="outline"
-                            className={getStatusColor(order.status)}
-                          >
-                            {order.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap hidden sm:table-cell">
-                          <Badge
-                            variant="outline"
-                            className={getPaymentColor(order.payment)}
-                          >
-                            {order.payment}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <div>${order.total.toFixed(2)}</div>
-                          <div className="text-xs text-muted-foreground hidden sm:block">
-                            {order.items} items
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" /> View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Package className="h-4 w-4 mr-2" /> Update
-                                Status
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Truck className="h-4 w-4 mr-2" /> Shipping Info
-                              </DropdownMenuItem>
-                              {order.disputed && (
-                                <DropdownMenuItem>
-                                  <AlertCircle className="h-4 w-4 mr-2" />{" "}
-                                  Resolve Dispute
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>
-                                <Printer className="h-4 w-4 mr-2" /> Print
-                                Invoice
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Download className="h-4 w-4 mr-2" /> Download
-                                Details
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                    {filteredOrders.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="h-24 text-center">
-                          No orders found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing <strong>{filteredOrders.length}</strong> of{" "}
-                  <strong>{orders.length}</strong> orders
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" disabled>
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" disabled>
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <CustomTable
+                columns={tableColumns}
+                data={orders}
+                editable={false}
+                pagination={true}
+                loading={false}
+              />
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Disputed Orders</CardTitle>
-            <CardDescription>
-              Orders that require admin attention
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {orders
-                .filter((o) => o.disputed)
-                .map((order, index) => (
-                  <motion.div
-                    key={order.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 border rounded-md"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                      <AlertCircle className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div className="flex-1 space-y-1 min-w-0">
-                      <div className="flex items-center flex-wrap gap-2">
-                        <p className="font-medium truncate">{order.id}</p>
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(order.status)}
-                        >
-                          {order.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {order.customer.name} • {order.seller.name} • $
-                        {order.total.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Eye className="h-4 w-4 mr-2" /> View
-                      </Button>
-                      <Button size="sm" className="flex-1 sm:flex-none">
-                        <Check className="h-4 w-4 mr-2" /> Resolve
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-              {orders.filter((o) => o.disputed).length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Check className="h-8 w-8 mx-auto mb-2" />
-                  <p>No disputed orders at the moment</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

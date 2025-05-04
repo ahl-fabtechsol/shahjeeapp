@@ -8,7 +8,6 @@ import {
   FileText,
   Settings,
   Lock,
-  Database,
   ShoppingCart,
   Package,
   Heart,
@@ -27,11 +26,6 @@ const adminRoutes = [
     title: "User Management",
     url: "/dashboard/admin/users",
     icon: Users,
-  },
-  {
-    title: "Seller Management",
-    url: "/dashboard/admin/sellers",
-    icon: Store,
   },
   {
     title: "Order Management",
