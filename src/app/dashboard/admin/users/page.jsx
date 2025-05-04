@@ -58,6 +58,17 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Add this CSS utility class
+const noScrollbarStyle = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
+
 // Sample user data
 const users = [
   {
@@ -269,6 +280,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-4">
+      <style>{noScrollbarStyle}</style>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -284,8 +296,8 @@ export default function AdminUsersPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="md:col-span-1">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
+          <Card className="lg:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>User Statistics</CardTitle>
               <CardDescription>Overview of user accounts</CardDescription>
@@ -395,34 +407,50 @@ export default function AdminUsersPage() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-3">
+          <Card className="lg:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <CardTitle>User Management</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <Download className="h-4 w-4 mr-2" /> Export
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <Calendar className="h-4 w-4 mr-2" /> Filter by Date
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="mb-4"
-              >
-                <TabsList>
-                  <TabsTrigger value="all">All Users</TabsTrigger>
-                  <TabsTrigger value="active">Active</TabsTrigger>
-                  <TabsTrigger value="inactive">Inactive</TabsTrigger>
-                  <TabsTrigger value="suspended">Suspended</TabsTrigger>
-                  <TabsTrigger value="unverified">Unverified</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="mb-4 overflow-hidden">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="overflow-x-auto flex w-full pb-1 mb-1 no-scrollbar">
+                    <TabsTrigger value="all" className="flex-shrink-0">
+                      All Users
+                    </TabsTrigger>
+                    <TabsTrigger value="active" className="flex-shrink-0">
+                      Active
+                    </TabsTrigger>
+                    <TabsTrigger value="inactive" className="flex-shrink-0">
+                      Inactive
+                    </TabsTrigger>
+                    <TabsTrigger value="suspended" className="flex-shrink-0">
+                      Suspended
+                    </TabsTrigger>
+                    <TabsTrigger value="unverified" className="flex-shrink-0">
+                      Unverified
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
@@ -453,7 +481,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -467,17 +495,25 @@ export default function AdminUsersPage() {
                         />
                       </TableHead>
                       <TableHead className="w-[80px]">Avatar</TableHead>
-                      <TableHead>
+                      <TableHead className="whitespace-nowrap">
                         <div className="flex items-center">
                           User
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         </div>
                       </TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Verified</TableHead>
-                      <TableHead>Join Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="whitespace-nowrap">Role</TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Status
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                        Verified
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden md:table-cell">
+                        Join Date
+                      </TableHead>
+                      <TableHead className="text-right whitespace-nowrap">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -508,7 +544,7 @@ export default function AdminUsersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">{user.name}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">
                             {user.email}
                           </div>
                         </TableCell>
@@ -528,14 +564,16 @@ export default function AdminUsersPage() {
                             {user.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           {user.verified ? (
                             <Check className="h-5 w-5 text-green-500" />
                           ) : (
                             <X className="h-5 w-5 text-red-500" />
                           )}
                         </TableCell>
-                        <TableCell>{user.joinDate}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {user.joinDate}
+                        </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -588,7 +626,7 @@ export default function AdminUsersPage() {
                 </Table>
               </div>
 
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4">
                 <div className="text-sm text-muted-foreground">
                   Showing <strong>{filteredUsers.length}</strong> of{" "}
                   <strong>{users.length}</strong> users
@@ -624,29 +662,37 @@ export default function AdminUsersPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex items-center space-x-4"
+                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-md"
                   >
-                    <Avatar>
+                    <Avatar className="w-10 h-10">
                       <AvatarImage
                         src={user.avatar || "/placeholder.svg"}
                         alt={user.name}
                       />
                       <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 space-y-1">
+                    <div className="flex-1 space-y-1 min-w-0">
                       <p className="text-sm font-medium leading-none">
                         {user.name}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         Last active on {user.lastActive} ({user.orders} total
                         orders)
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 sm:flex-none"
+                      >
                         <Phone className="h-4 w-4 mr-2" /> Call
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 sm:flex-none"
+                      >
                         <Mail className="h-4 w-4 mr-2" /> Email
                       </Button>
                     </div>

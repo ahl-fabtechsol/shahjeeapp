@@ -1,6 +1,5 @@
 "use client";
-import { Input } from "@/components/ui/input";
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSidebar } from "../ui/sidebar";
 import { usePathname } from "next/navigation";
@@ -20,13 +19,6 @@ export default function DashboardHeader({ type }) {
       <Menu onClick={toggleSidebar} className="md:hidden" />
 
       <div className="flex items-center gap-4">
-        <div className="flex-1 mx-6 max-w-md relative md:flex hidden">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            size={18}
-          />
-          <Input type="text" placeholder="Search..." className="pl-10" />
-        </div>
         <div className="flex items-center gap-4">
           <button className="relative p-2 rounded-full hover:bg-primary/20 transition">
             <Bell className="text-muted-foreground" size={20} />

@@ -55,7 +55,16 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Sample order data
+const noScrollbarStyle = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
+
 const orders = [
   {
     id: "ORD-7352",
@@ -273,6 +282,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="p-4">
+      <style>{noScrollbarStyle}</style>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -288,8 +298,8 @@ export default function AdminOrdersPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="md:col-span-1">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
+          <Card className="lg:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>Order Summary</CardTitle>
               <CardDescription>Quick overview of all orders</CardDescription>
@@ -380,36 +390,56 @@ export default function AdminOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-3">
+          <Card className="lg:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <CardTitle>Order Management</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <Calendar className="h-4 w-4 mr-2" /> Filter by Date
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <Clock className="h-4 w-4 mr-2" /> Recent Orders
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="mb-4"
-              >
-                <TabsList>
-                  <TabsTrigger value="all">All Orders</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="processing">Processing</TabsTrigger>
-                  <TabsTrigger value="shipped">Shipped</TabsTrigger>
-                  <TabsTrigger value="delivered">Delivered</TabsTrigger>
-                  <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-                  <TabsTrigger value="disputed">Disputed</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="mb-4 overflow-hidden">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="overflow-x-auto flex w-full pb-1 mb-1 no-scrollbar">
+                    <TabsTrigger value="all" className="flex-shrink-0">
+                      All Orders
+                    </TabsTrigger>
+                    <TabsTrigger value="pending" className="flex-shrink-0">
+                      Pending
+                    </TabsTrigger>
+                    <TabsTrigger value="processing" className="flex-shrink-0">
+                      Processing
+                    </TabsTrigger>
+                    <TabsTrigger value="shipped" className="flex-shrink-0">
+                      Shipped
+                    </TabsTrigger>
+                    <TabsTrigger value="delivered" className="flex-shrink-0">
+                      Delivered
+                    </TabsTrigger>
+                    <TabsTrigger value="cancelled" className="flex-shrink-0">
+                      Cancelled
+                    </TabsTrigger>
+                    <TabsTrigger value="disputed" className="flex-shrink-0">
+                      Disputed
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
@@ -440,7 +470,7 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -453,19 +483,31 @@ export default function AdminOrdersPage() {
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
-                      <TableHead>
+                      <TableHead className="whitespace-nowrap">
                         <div className="flex items-center">
                           Order ID
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         </div>
                       </TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Seller</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Customer
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden md:table-cell">
+                        Seller
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                        Date
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Status
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                        Payment
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">Total</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -483,7 +525,7 @@ export default function AdminOrdersPage() {
                             onCheckedChange={() => handleSelectOrder(order.id)}
                           />
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium whitespace-nowrap">
                           <div className="flex items-center">
                             {order.id}
                             {order.disputed && (
@@ -494,15 +536,19 @@ export default function AdminOrdersPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div>{order.customer.name}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground hidden sm:block">
                             {order.customer.email}
                           </div>
                         </TableCell>
-                        <TableCell>{order.seller.name}</TableCell>
-                        <TableCell>{order.date}</TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap hidden md:table-cell">
+                          {order.seller.name}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap hidden sm:table-cell">
+                          {order.date}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge
                             variant="outline"
                             className={getStatusColor(order.status)}
@@ -510,7 +556,7 @@ export default function AdminOrdersPage() {
                             {order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap hidden sm:table-cell">
                           <Badge
                             variant="outline"
                             className={getPaymentColor(order.payment)}
@@ -518,13 +564,13 @@ export default function AdminOrdersPage() {
                             {order.payment}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div>${order.total.toFixed(2)}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground hidden sm:block">
                             {order.items} items
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
@@ -575,7 +621,7 @@ export default function AdminOrdersPage() {
                 </Table>
               </div>
 
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4">
                 <div className="text-sm text-muted-foreground">
                   Showing <strong>{filteredOrders.length}</strong> of{" "}
                   <strong>{orders.length}</strong> orders
@@ -610,31 +656,35 @@ export default function AdminOrdersPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex items-center space-x-4 p-4 border rounded-md"
+                    className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 border rounded-md"
                   >
-                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                       <AlertCircle className="h-5 w-5 text-red-500" />
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center">
-                        <p className="font-medium">{order.id}</p>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2">
+                        <p className="font-medium truncate">{order.id}</p>
                         <Badge
                           variant="outline"
-                          className={getStatusColor(order.status) + " ml-2"}
+                          className={getStatusColor(order.status)}
                         >
                           {order.status}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         {order.customer.name} • {order.seller.name} • $
                         {order.total.toFixed(2)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 sm:flex-none"
+                      >
                         <Eye className="h-4 w-4 mr-2" /> View
                       </Button>
-                      <Button size="sm">
+                      <Button size="sm" className="flex-1 sm:flex-none">
                         <Check className="h-4 w-4 mr-2" /> Resolve
                       </Button>
                     </div>

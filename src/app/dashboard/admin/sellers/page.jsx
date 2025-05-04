@@ -59,6 +59,17 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Add this CSS utility class
+const noScrollbarStyle = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
+
 // Sample seller data
 const sellers = [
   {
@@ -250,6 +261,7 @@ export default function AdminSellersPage() {
 
   return (
     <div className="p-4">
+      <style>{noScrollbarStyle}</style>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -265,8 +277,8 @@ export default function AdminSellersPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="md:col-span-1">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
+          <Card className="lg:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>Seller Statistics</CardTitle>
               <CardDescription>Overview of seller accounts</CardDescription>
@@ -362,34 +374,50 @@ export default function AdminSellersPage() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-3">
+          <Card className="lg:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <CardTitle>Seller Management</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <Download className="h-4 w-4 mr-2" /> Export
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
                     <Calendar className="h-4 w-4 mr-2" /> Filter by Date
                   </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="mb-4"
-              >
-                <TabsList>
-                  <TabsTrigger value="all">All Sellers</TabsTrigger>
-                  <TabsTrigger value="active">Active</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="suspended">Suspended</TabsTrigger>
-                  <TabsTrigger value="featured">Featured</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="mb-4 overflow-hidden">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="overflow-x-auto flex w-full pb-1 mb-1 no-scrollbar">
+                    <TabsTrigger value="all" className="flex-shrink-0">
+                      All Sellers
+                    </TabsTrigger>
+                    <TabsTrigger value="active" className="flex-shrink-0">
+                      Active
+                    </TabsTrigger>
+                    <TabsTrigger value="pending" className="flex-shrink-0">
+                      Pending
+                    </TabsTrigger>
+                    <TabsTrigger value="suspended" className="flex-shrink-0">
+                      Suspended
+                    </TabsTrigger>
+                    <TabsTrigger value="featured" className="flex-shrink-0">
+                      Featured
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
@@ -420,7 +448,7 @@ export default function AdminSellersPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -434,17 +462,27 @@ export default function AdminSellersPage() {
                         />
                       </TableHead>
                       <TableHead className="w-[80px]">Logo</TableHead>
-                      <TableHead>
+                      <TableHead className="whitespace-nowrap">
                         <div className="flex items-center">
                           Seller
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         </div>
                       </TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Products</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Revenue</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Status
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
+                        Products
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Rating
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap hidden md:table-cell">
+                        Revenue
+                      </TableHead>
+                      <TableHead className="text-right whitespace-nowrap">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -476,28 +514,34 @@ export default function AdminSellersPage() {
                           </Avatar>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{seller.name}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="font-medium truncate max-w-[150px] sm:max-w-none">
+                            {seller.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">
                             {seller.owner}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={getStatusColor(seller.status)}
-                          >
-                            {seller.status}
-                          </Badge>
-                          {seller.featured && (
+                          <div className="flex flex-wrap gap-1">
                             <Badge
                               variant="outline"
-                              className="ml-2 bg-blue-50 text-blue-700 border-blue-200"
+                              className={getStatusColor(seller.status)}
                             >
-                              Featured
+                              {seller.status}
                             </Badge>
-                          )}
+                            {seller.featured && (
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 border-blue-200"
+                              >
+                                Featured
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell>{seller.products}</TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {seller.products}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             {seller.rating > 0 ? (
@@ -510,7 +554,9 @@ export default function AdminSellersPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>${seller.revenue.toFixed(2)}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          ${seller.revenue.toFixed(2)}
+                        </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -584,7 +630,7 @@ export default function AdminSellersPage() {
                 </Table>
               </div>
 
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4">
                 <div className="text-sm text-muted-foreground">
                   Showing <strong>{filteredSellers.length}</strong> of{" "}
                   <strong>{sellers.length}</strong> sellers
@@ -621,9 +667,9 @@ export default function AdminSellersPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex items-center space-x-4"
+                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-md"
                   >
-                    <Avatar>
+                    <Avatar className="w-10 h-10">
                       <AvatarImage
                         src={seller.avatar || "/placeholder.svg"}
                         alt={seller.name}
@@ -632,31 +678,37 @@ export default function AdminSellersPage() {
                         {getInitials(seller.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center">
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium leading-none">
                           {seller.name}
                         </p>
                         {seller.featured && (
                           <Badge
                             variant="outline"
-                            className="ml-2 bg-blue-50 text-blue-700 border-blue-200"
+                            className="bg-blue-50 text-blue-700 border-blue-200"
                           >
                             Featured
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         {seller.products} products • $
                         {seller.revenue.toFixed(2)} revenue
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="flex items-center bg-yellow-50 px-2 py-1 rounded-md">
                         <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
-                        <span>{seller.rating.toFixed(1)}</span>
+                        <span className="text-yellow-700">
+                          {seller.rating.toFixed(1)}
+                        </span>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 sm:flex-none"
+                      >
                         <Eye className="h-4 w-4 mr-2" /> View
                       </Button>
                     </div>
