@@ -1,17 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowUpDown,
-  Calendar,
   Check,
-  Download,
   Eye,
-  Filter,
-  Mail,
   MoreHorizontal,
-  Phone,
   Search,
   Shield,
   Trash2,
@@ -19,7 +12,9 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
+import { useState } from "react";
 
+import { CustomTable } from "@/components/customTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,17 +43,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import UserDialog from "./(components)/userDialog";
 
-// Add this CSS utility class
 const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -69,7 +55,6 @@ const noScrollbarStyle = `
   }
 `;
 
-// Sample user data
 const users = [
   {
     id: "USR-1001",
@@ -203,6 +188,33 @@ export default function AdminUsersPage() {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mode, setMode] = useState("add");
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const openAdd = () => {
+    setMode("add");
+    setCurrentUser(null);
+    setDrawerOpen(true);
+  };
+
+  const openEdit = (u) => {
+    setMode("edit");
+    setCurrentUser(u);
+    setDrawerOpen(true);
+  };
+
+  const openView = (u) => {
+    setMode("view");
+    setCurrentUser(u);
+    setDrawerOpen(true);
+  };
+
+  const handleSubmit = (m, user) => {
+    if (m === "add") {
+    } else if (m === "edit") {
+    }
+  };
 
   const getFilteredUsers = () => {
     let filtered = users.filter(
@@ -278,8 +290,150 @@ export default function AdminUsersPage() {
     }
   };
 
+  const tableColumns = [
+    {
+      id: "select",
+      accessorKey: "id",
+      header: () => (
+        <Checkbox
+          checked={
+            selectedUsers.length === filteredUsers.length &&
+            filteredUsers.length > 0
+          }
+          onCheckedChange={handleSelectAll}
+        />
+      ),
+      cell: (info) => (
+        <Checkbox
+          checked={isSelected(info.getValue())}
+          onCheckedChange={() => handleSelectUser(info.getValue())}
+        />
+      ),
+    },
+    {
+      accessorKey: "avatar",
+      header: "Avatar",
+      cell: (info) => (
+        <Avatar className="w-10 h-10">
+          <AvatarImage
+            src={info.getValue()}
+            alt={users.find((u) => u.id === info.row.original.id).name}
+          />
+          <AvatarFallback>
+            {getInitials(users.find((u) => u.id === info.row.original.id).name)}
+          </AvatarFallback>
+        </Avatar>
+      ),
+    },
+    {
+      accessorKey: "name",
+      header: "User",
+      cell: (info) => (
+        <>
+          <div className="font-medium">{info.row.original.name}</div>
+          <div className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">
+            {info.row.original.email}
+          </div>
+        </>
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: (info) => (
+        <Badge
+          variant="outline"
+          className={getRoleColor(
+            users.find((u) => u.id === info.row.original.id).role
+          )}
+        >
+          {users.find((u) => u.id === info.row.original.id).role}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: (info) => (
+        <Badge
+          variant="outline"
+          className={getStatusColor(
+            users.find((u) => u.id === info.row.original.id).status
+          )}
+        >
+          {users.find((u) => u.id === info.row.original.id).status}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "verified",
+      header: "Verified",
+      cell: (info) =>
+        users.find((u) => u.id === info.row.original.id).verified ? (
+          <Check className="h-5 w-5 text-green-500" />
+        ) : (
+          <X className="h-5 w-5 text-red-500" />
+        ),
+    },
+    {
+      accessorKey: "joinDate",
+      header: "Join Date",
+      cell: (info) => users.find((u) => u.id === info.row.original.id).joinDate,
+    },
+    {
+      accessorKey: "actions",
+      header: "Actions",
+      cell: (info) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => openView(info.row.original)}>
+              <Eye className="h-4 w-4 mr-2" /> View Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => openEdit(info.row.original)}>
+              <UserCog className="h-4 w-4 mr-2" /> Edit User
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            {info.row.original.status === "Active" ? (
+              <DropdownMenuItem>
+                <X className="h-4 w-4 mr-2" /> Deactivate
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem>
+                <Check className="h-4 w-4 mr-2" /> Activate
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem>
+              <Shield className="h-4 w-4 mr-2" /> Change Role
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-red-600">
+              <Trash2 className="h-4 w-4 mr-2" /> Delete User
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
   return (
     <div className="p-4">
+      {drawerOpen && (
+        <UserDialog
+          open={drawerOpen}
+          mode={mode}
+          initialUser={currentUser}
+          onOpenChange={setDrawerOpen}
+          onSubmit={handleSubmit}
+        />
+      )}
       <style>{noScrollbarStyle}</style>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -291,13 +445,13 @@ export default function AdminUsersPage() {
               Manage and monitor user accounts across the platform.
             </p>
           </div>
-          <Button className="sm:w-auto">
+          <Button className="sm:w-auto" onClick={openAdd}>
             <UserPlus className="h-4 w-4 mr-2" /> Add User
           </Button>
         </div>
 
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-4">
-          <Card className="lg:col-span-1">
+        <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">
+          <Card className="2xl:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>User Statistics</CardTitle>
               <CardDescription>Overview of user accounts</CardDescription>
@@ -314,12 +468,7 @@ export default function AdminUsersPage() {
                     {users.filter((u) => u.status === "Active").length}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Inactive Users</span>
-                  <span className="font-medium">
-                    {users.filter((u) => u.status === "Inactive").length}
-                  </span>
-                </div>
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Suspended Users</span>
                   <span className="font-medium">
@@ -407,51 +556,25 @@ export default function AdminUsersPage() {
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-3">
+          <Card className="2xl:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex justify-between items-center gap-2">
                 <CardTitle>User Management</CardTitle>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <Download className="h-4 w-4 mr-2" /> Export
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" /> Filter by Date
-                  </Button>
-                </div>
+                <Select className="">
+                  <SelectTrigger className="">
+                    <SelectValue placeholder="Filter users…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="unverified">Unverified</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 overflow-hidden">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="overflow-x-auto flex w-full pb-1 mb-1 no-scrollbar">
-                    <TabsTrigger value="all" className="flex-shrink-0">
-                      All Users
-                    </TabsTrigger>
-                    <TabsTrigger value="active" className="flex-shrink-0">
-                      Active
-                    </TabsTrigger>
-                    <TabsTrigger value="inactive" className="flex-shrink-0">
-                      Inactive
-                    </TabsTrigger>
-                    <TabsTrigger value="suspended" className="flex-shrink-0">
-                      Suspended
-                    </TabsTrigger>
-                    <TabsTrigger value="unverified" className="flex-shrink-0">
-                      Unverified
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -459,187 +582,17 @@ export default function AdminUsersPage() {
                     type="search"
                     placeholder="Search users..."
                     className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                  <Select defaultValue="recent">
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="recent">Most Recent</SelectItem>
-                      <SelectItem value="oldest">Oldest First</SelectItem>
-                      <SelectItem value="name">Name (A-Z)</SelectItem>
-                      <SelectItem value="role">Role</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">
-                        <Checkbox
-                          checked={
-                            selectedUsers.length === filteredUsers.length &&
-                            filteredUsers.length > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="w-[80px]">Avatar</TableHead>
-                      <TableHead className="whitespace-nowrap">
-                        <div className="flex items-center">
-                          User
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap">Role</TableHead>
-                      <TableHead className="whitespace-nowrap">
-                        Status
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap hidden sm:table-cell">
-                        Verified
-                      </TableHead>
-                      <TableHead className="whitespace-nowrap hidden md:table-cell">
-                        Join Date
-                      </TableHead>
-                      <TableHead className="text-right whitespace-nowrap">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <motion.tr
-                        key={user.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="group"
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={isSelected(user.id)}
-                            onCheckedChange={() => handleSelectUser(user.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Avatar>
-                            <AvatarImage
-                              src={user.avatar || "/placeholder.svg"}
-                              alt={user.name}
-                            />
-                            <AvatarFallback>
-                              {getInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">
-                            {user.email}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={getRoleColor(user.role)}
-                          >
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={getStatusColor(user.status)}
-                          >
-                            {user.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          {user.verified ? (
-                            <Check className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <X className="h-5 w-5 text-red-500" />
-                          )}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {user.joinDate}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" /> View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <UserCog className="h-4 w-4 mr-2" /> Edit User
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Mail className="h-4 w-4 mr-2" /> Send Email
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {user.status === "Active" ? (
-                                <DropdownMenuItem>
-                                  <X className="h-4 w-4 mr-2" /> Deactivate
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem>
-                                  <Check className="h-4 w-4 mr-2" /> Activate
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem>
-                                <Shield className="h-4 w-4 mr-2" /> Change Role
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete User
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                    {filteredUsers.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-24 text-center">
-                          No users found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing <strong>{filteredUsers.length}</strong> of{" "}
-                  <strong>{users.length}</strong> users
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" disabled>
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" disabled>
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <CustomTable
+                data={users}
+                columns={tableColumns}
+                loading={false}
+                editable={false}
+                pagination={true}
+              />
             </CardContent>
           </Card>
         </div>
@@ -675,26 +628,10 @@ export default function AdminUsersPage() {
                       <p className="text-sm font-medium leading-none">
                         {user.name}
                       </p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-sm text-muted-foreground truncate text-wrap">
                         Last active on {user.lastActive} ({user.orders} total
                         orders)
                       </p>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Phone className="h-4 w-4 mr-2" /> Call
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex-1 sm:flex-none"
-                      >
-                        <Mail className="h-4 w-4 mr-2" /> Email
-                      </Button>
                     </div>
                   </motion.div>
                 ))}
