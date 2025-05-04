@@ -1,23 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   AlertCircle,
-  ArrowUpDown,
   Calendar,
-  Check,
-  Clock,
-  Download,
   Eye,
-  Filter,
   MoreHorizontal,
-  Package,
-  Printer,
   Search,
-  Truck,
 } from "lucide-react";
+import { useState } from "react";
 
+import { CustomTable } from "@/components/customTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +25,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -45,16 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CustomTable } from "@/components/customTable";
+import { OrderDetailDialog } from "./(components)/orderDetailDialog";
 
 const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
@@ -209,7 +191,8 @@ export default function AdminOrdersPage() {
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-
+  const [showOrderDetail, setShowOrderDetail] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const getFilteredOrders = () => {
     let filtered = orders.filter(
       (order) =>
@@ -393,14 +376,13 @@ export default function AdminOrdersPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedOrder(info.row.original);
+                setShowOrderDetail(true);
+              }}
+            >
               <Eye className="h-4 w-4 mr-2" /> View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Package className="h-4 w-4 mr-2" /> Update Status
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Truck className="h-4 w-4 mr-2" /> Shipping Info
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -410,6 +392,13 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="p-4">
+      {showOrderDetail && (
+        <OrderDetailDialog
+          order={selectedOrder}
+          open={showOrderDetail}
+          onOpenChange={setShowOrderDetail}
+        />
+      )}
       <style>{noScrollbarStyle}</style>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
