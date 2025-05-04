@@ -4,14 +4,19 @@
 
 
 
-/* hide-scrollbar utility */
 .hide-scrollbar {
-  -ms-overflow-style: none;   /* IE and Edge */
-  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none; 
+  scrollbar-width: none;     
 }
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;              /* Chrome, Safari, Opera */
+  display: none;          
 }
+
+
+body {
+  font-family: "Nunito", sans-serif;
+}
+
 
 
 

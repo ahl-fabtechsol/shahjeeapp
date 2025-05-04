@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
-  ArrowUpDown,
   Check,
-  Clock,
   Eye,
-  Filter,
   Flag,
   MoreHorizontal,
   Search,
@@ -18,7 +14,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useState } from "react";
 
+import { CustomTable } from "@/components/customTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,17 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Sample flagged content data
 const flaggedContent = [
   {
     id: "FLAG-1001",
@@ -307,6 +295,148 @@ export default function AdminModerationPage() {
     }
   };
 
+  const tableColumns = [
+    {
+      id: "select",
+      accessorKey: "id",
+      header: () => (
+        <Checkbox
+          checked={
+            selectedItems.length === filteredContent.length &&
+            filteredContent.length > 0
+          }
+          onCheckedChange={handleSelectAll}
+        />
+      ),
+      cell: (info) => (
+        <Checkbox
+          checked={isSelected(info.row.original.id)}
+          onCheckedChange={() => handleSelectItem(info.row.original.id)}
+        />
+      ),
+    },
+    {
+      id: "type",
+      accessorKey: "type",
+      header: "Type",
+      cell: (info) => getTypeIcon(info.row.original.type),
+    },
+    {
+      id: "title",
+      accessorKey: "title",
+      header: "Content",
+      cell: (info) => (
+        <>
+          <div className="font-medium">{info.row.original.title}</div>
+          <div className="text-xs text-muted-foreground truncate max-w-[250px]">
+            {info.row.original.description}
+          </div>
+        </>
+      ),
+    },
+    {
+      id: "reporter",
+      accessorKey: "reporter.name",
+      header: "Reporter",
+      cell: (info) => (
+        <div className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage
+              src={info.row.original.reporter.avatar || "/placeholder.svg"}
+              alt={info.row.original.reporter.name}
+            />
+            <AvatarFallback>
+              {info.row.original.reporter.name === "System"
+                ? "SYS"
+                : info.row.original.reporter.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <span>{info.row.original.reporter.name}</span>
+        </div>
+      ),
+    },
+    {
+      id: "seller",
+      accessorKey: "seller.name",
+      header: "Seller",
+      cell: (info) => info.row.original.seller.name,
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: "Status",
+      cell: (info) => (
+        <Badge
+          variant="outline"
+          className={getStatusColor(info.row.original.status)}
+        >
+          {info.row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "severity",
+      accessorKey: "severity",
+      header: "Severity",
+      cell: (info) => (
+        <Badge
+          variant="outline"
+          className={getSeverityColor(info.row.original.severity)}
+        >
+          {info.row.original.severity}
+        </Badge>
+      ),
+    },
+    {
+      id: "date",
+      accessorKey: "date",
+      header: "Date",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (info) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem>
+              <Eye className="h-4 w-4 mr-2" /> View Content
+            </DropdownMenuItem>
+            {info.row.original.status === "Pending" && (
+              <DropdownMenuItem>
+                <Shield className="h-4 w-4 mr-2" /> Start Review
+              </DropdownMenuItem>
+            )}
+            {(info.row.original.status === "Pending" ||
+              info.row.original.status === "Under Review") && (
+              <>
+                <DropdownMenuItem>
+                  <Check className="h-4 w-4 mr-2" /> Approve Content
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <X className="h-4 w-4 mr-2" /> Remove Content
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <ShieldCheck className="h-4 w-4 mr-2" /> Mark as Resolved
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600">
+              <Trash2 className="h-4 w-4 mr-2" /> Delete Flag
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
   return (
     <div className="p-4">
       <div className="flex flex-col gap-4">
@@ -319,13 +449,10 @@ export default function AdminModerationPage() {
               Review and moderate flagged content across the platform.
             </p>
           </div>
-          <Button className="sm:w-auto">
-            <Shield className="h-4 w-4 mr-2" /> Moderation Settings
-          </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="md:col-span-1">
+        <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">
+          <Card className="2xl:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>Moderation Overview</CardTitle>
               <CardDescription>Summary of flagged content</CardDescription>
@@ -405,35 +532,25 @@ export default function AdminModerationPage() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-3">
+          <Card className="2xl:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between items-center gap-2">
                 <CardTitle>Flagged Content</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Clock className="h-4 w-4 mr-2" /> Auto-Refresh
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Shield className="h-4 w-4 mr-2" /> Bulk Actions
-                  </Button>
-                </div>
+                <Select className="">
+                  <SelectTrigger className="">
+                    <SelectValue placeholder="Filter content..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Content</SelectItem>
+                    <SelectItem value="active">Pending</SelectItem>
+                    <SelectItem value="inactive">Under Review</SelectItem>
+                    <SelectItem value="suspended">Resolved</SelectItem>
+                    <SelectItem value="unverified">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="mb-4"
-              >
-                <TabsList>
-                  <TabsTrigger value="all">All Content</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="under-review">Under Review</TabsTrigger>
-                  <TabsTrigger value="resolved">Resolved</TabsTrigger>
-                  <TabsTrigger value="critical">Critical</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -441,182 +558,17 @@ export default function AdminModerationPage() {
                     type="search"
                     placeholder="Search flagged content..."
                     className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                  <Select defaultValue="newest">
-                    <SelectTrigger className="w-[160px]">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest first</SelectItem>
-                      <SelectItem value="oldest">Oldest first</SelectItem>
-                      <SelectItem value="severity">Severity</SelectItem>
-                      <SelectItem value="type">Content Type</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">
-                        <Checkbox
-                          checked={
-                            selectedItems.length === filteredContent.length &&
-                            filteredContent.length > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="w-[50px]">Type</TableHead>
-                      <TableHead>
-                        <div className="flex items-center">
-                          Content
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </div>
-                      </TableHead>
-                      <TableHead>Reporter</TableHead>
-                      <TableHead>Seller</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Severity</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredContent.map((item) => (
-                      <motion.tr
-                        key={item.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="group"
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={isSelected(item.id)}
-                            onCheckedChange={() => handleSelectItem(item.id)}
-                          />
-                        </TableCell>
-                        <TableCell>{getTypeIcon(item.type)}</TableCell>
-                        <TableCell>
-                          <div className="font-medium">{item.title}</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[250px]">
-                            {item.description}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage
-                                src={item.reporter.avatar || "/placeholder.svg"}
-                                alt={item.reporter.name}
-                              />
-                              <AvatarFallback>
-                                {item.reporter.name === "System"
-                                  ? "SYS"
-                                  : item.reporter.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{item.reporter.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{item.seller.name}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={getStatusColor(item.status)}
-                          >
-                            {item.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={getSeverityColor(item.severity)}
-                          >
-                            {item.severity}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{item.date}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" /> View Content
-                              </DropdownMenuItem>
-                              {item.status === "Pending" && (
-                                <DropdownMenuItem>
-                                  <Shield className="h-4 w-4 mr-2" /> Start
-                                  Review
-                                </DropdownMenuItem>
-                              )}
-                              {(item.status === "Pending" ||
-                                item.status === "Under Review") && (
-                                <>
-                                  <DropdownMenuItem>
-                                    <Check className="h-4 w-4 mr-2" /> Approve
-                                    Content
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    <X className="h-4 w-4 mr-2" /> Remove
-                                    Content
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>
-                                <ShieldCheck className="h-4 w-4 mr-2" /> Mark as
-                                Resolved
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete Flag
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                    {filteredContent.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="h-24 text-center">
-                          No flagged content found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing <strong>{filteredContent.length}</strong> of{" "}
-                  <strong>{flaggedContent.length}</strong> items
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" disabled>
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" disabled>
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <CustomTable
+                columns={tableColumns}
+                data={flaggedContent}
+                loading={false}
+                pagination={true}
+                editable={false}
+              />
             </CardContent>
           </Card>
         </div>
@@ -638,7 +590,7 @@ export default function AdminModerationPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex items-center space-x-4 p-4 border rounded-md"
+                    className="flex items-center space-x-4 p-4 border rounded-md flex-wrap gap-4"
                   >
                     <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                       {getTypeIcon(item.type)}

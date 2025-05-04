@@ -1,22 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  ArrowUp,
-  BarChart2,
-  Calendar,
-  CreditCard,
-  DollarSign,
-  Download,
-  LineChart,
-  PieChart,
-  ShoppingBag,
-  Store,
-  TrendingDown,
-  TrendingUp,
-  Users,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -34,22 +16,165 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  ArrowUp,
+  Calendar,
+  DollarSign,
+  ShoppingBag,
+  Store,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+
+const sellers = [
+  {
+    id: "tech-store",
+    name: "Tech Store",
+    revenue: 345_670,
+    orders: 2_348,
+    growth: 5.1,
+  },
+  {
+    id: "fashion-hub",
+    name: "Fashion Hub",
+    revenue: 198_220,
+    orders: 1_237,
+    growth: 3.8,
+  },
+];
+
+const buyers = [
+  {
+    id: "alex-johnson",
+    name: "Alex Johnson",
+    spent: 12_545,
+    orders: 43,
+    growth: 2.4,
+  },
+  {
+    id: "sara-lee",
+    name: "Sara Lee",
+    spent: 8_912,
+    orders: 28,
+    growth: 1.9,
+  },
+];
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
+};
+
+function StatsGrid({
+  revenue,
+  orders,
+  users,
+  growthRevenue = 0,
+  growthUsers = 0,
+  growthOrders = 0,
+}) {
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+    >
+      <motion.div variants={item}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${revenue.toLocaleString()}
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <span className="flex items-center text-green-500">
+                <ArrowUp className="h-3 w-3 mr-1" />
+                {growthRevenue}%
+              </span>
+              <span>from last period</span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{users.toLocaleString()}</div>
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <span className="flex items-center text-green-500">
+                <ArrowUp className="h-3 w-3 mr-1" />
+                {growthUsers}%
+              </span>
+              <span>from last period</span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{orders.toLocaleString()}</div>
+            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+              <span className="flex items-center text-green-500">
+                <ArrowUp className="h-3 w-3 mr-1" />
+                {growthOrders}%
+              </span>
+              <span>from last period</span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card className="h-full flex items-center justify-center">
+          <CardContent className="text-muted-foreground text-center">
+            <Calendar className="mx-auto h-5 w-5 mb-2" />
+            More metrics coming soon
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 export default function AdminAnalyticsPage() {
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
+  const [selectedSeller, setSelectedSeller] = useState(null);
+  const [selectedBuyer, setSelectedBuyer] = useState(null);
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
+  const currentSeller = useMemo(
+    () => sellers.find((s) => s.id === selectedSeller) ?? null,
+    [selectedSeller]
+  );
+  const currentBuyer = useMemo(
+    () => buyers.find((b) => b.id === selectedBuyer) ?? null,
+    [selectedBuyer]
+  );
 
   return (
     <div className="p-4">
@@ -61,23 +186,13 @@ export default function AdminAnalyticsPage() {
               Comprehensive platform performance and business insights.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Calendar className="h-4 w-4 mr-2" /> Date Range
-            </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" /> Export Report
-            </Button>
-          </div>
         </div>
 
         <Tabs defaultValue="overview" className="mt-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="sellers">Sellers</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="seller">Seller</TabsTrigger>
+            <TabsTrigger value="buyer">Buyer</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
@@ -96,336 +211,91 @@ export default function AdminAnalyticsPage() {
               </Select>
             </div>
 
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-            >
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Revenue
-                    </CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">$1,845,231.89</div>
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <span className="flex items-center text-green-500">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        14.5%
-                      </span>
-                      <span>from last month</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Users
-                    </CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">24,573</div>
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <span className="flex items-center text-green-500">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        8.2%
-                      </span>
-                      <span>from last month</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Sellers
-                    </CardTitle>
-                    <Store className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">1,248</div>
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <span className="flex items-center text-green-500">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        4.3%
-                      </span>
-                      <span>from last month</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div variants={item}>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Orders
-                    </CardTitle>
-                    <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">87,342</div>
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <span className="flex items-center text-green-500">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        12.8%
-                      </span>
-                      <span>from last month</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="col-span-4">
-                <CardHeader>
-                  <CardTitle>Revenue Overview</CardTitle>
-                  <CardDescription>
-                    Monthly revenue trends across the platform
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pl-2">
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    <LineChart className="h-16 w-16" />
-                    <span className="ml-4">Revenue chart will appear here</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-3">
-                <CardHeader>
-                  <CardTitle>User Acquisition</CardTitle>
-                  <CardDescription>
-                    New user registrations over time
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pl-2">
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                    <BarChart2 className="h-16 w-16" />
-                    <span className="ml-4">
-                      User acquisition chart will appear here
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue by Category</CardTitle>
-                  <CardDescription>
-                    Distribution across product categories
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-center mb-4">
-                    <div className="h-40 w-40 flex items-center justify-center text-muted-foreground">
-                      <PieChart className="h-16 w-16" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {[
-                      {
-                        category: "Electronics",
-                        percentage: 35,
-                        color: "bg-blue-500",
-                      },
-                      {
-                        category: "Fashion",
-                        percentage: 25,
-                        color: "bg-green-500",
-                      },
-                      {
-                        category: "Home & Garden",
-                        percentage: 15,
-                        color: "bg-yellow-500",
-                      },
-                      {
-                        category: "Beauty",
-                        percentage: 12,
-                        color: "bg-purple-500",
-                      },
-                      {
-                        category: "Other",
-                        percentage: 13,
-                        color: "bg-gray-500",
-                      },
-                    ].map((item, index) => (
-                      <div key={index} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="flex items-center">
-                            <span
-                              className={`h-3 w-3 rounded-full ${item.color} mr-2`}
-                            ></span>
-                            {item.category}
-                          </span>
-                          <span>{item.percentage}%</span>
-                        </div>
-                        <Progress value={item.percentage} className="h-1" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Methods</CardTitle>
-                  <CardDescription>
-                    Distribution of payment methods used
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-center mb-4">
-                    <div className="h-40 w-40 flex items-center justify-center text-muted-foreground">
-                      <PieChart className="h-16 w-16" />
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                      {
-                        method: "Credit Card",
-                        percentage: 55,
-                        icon: CreditCard,
-                      },
-                      { method: "PayPal", percentage: 25, icon: CreditCard },
-                      { method: "Apple Pay", percentage: 12, icon: CreditCard },
-                      { method: "Other", percentage: 8, icon: CreditCard },
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-center">
-                        <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center mr-3">
-                          <item.icon className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm font-medium">{item.method}</p>
-                            <p className="text-sm font-medium">
-                              {item.percentage}%
-                            </p>
-                          </div>
-                          <Progress
-                            value={item.percentage}
-                            className="h-1 mt-1"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform Growth</CardTitle>
-                  <CardDescription>Key growth metrics</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">User Growth</span>
-                      <span className="font-medium">+24.8%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={78} max={100} className="h-2 flex-1" />
-                      <span className="text-xs text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        12%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Seller Growth
-                      </span>
-                      <span className="font-medium">+18.5%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={65} max={100} className="h-2 flex-1" />
-                      <span className="text-xs text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        8%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Revenue Growth
-                      </span>
-                      <span className="font-medium">+32.7%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={86} max={100} className="h-2 flex-1" />
-                      <span className="text-xs text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        15%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Order Volume
-                      </span>
-                      <span className="font-medium">+28.3%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={75} max={100} className="h-2 flex-1" />
-                      <span className="text-xs text-green-500 flex items-center">
-                        <ArrowUp className="h-3 w-3 mr-1" />
-                        10%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <StatsGrid
+              revenue={1_845_232}
+              users={24_573}
+              orders={87_342}
+              growthRevenue={14.5}
+              growthUsers={8.2}
+              growthOrders={12.8}
+            />
           </TabsContent>
 
-          <TabsContent value="revenue" className="mt-4">
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              <LineChart className="h-16 w-16" />
-              <span className="ml-4">
-                Detailed revenue analytics will appear here
-              </span>
+          <TabsContent value="seller" className="space-y-4 mt-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Seller Analytics</h2>
+              <Select
+                onValueChange={(val) => setSelectedSeller(val)}
+                defaultValue={selectedSeller ?? undefined}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Select seller" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sellers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {!currentSeller && (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <Store className="h-6 w-6 mr-2" />
+                Pick a seller to view detailed stats
+              </div>
+            )}
+
+            {currentSeller && (
+              <StatsGrid
+                revenue={currentSeller.revenue}
+                orders={currentSeller.orders}
+                users={0}
+                growthRevenue={currentSeller.growth}
+                growthOrders={currentSeller.growth / 2}
+              />
+            )}
           </TabsContent>
 
-          <TabsContent value="users" className="mt-4">
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              <Users className="h-16 w-16" />
-              <span className="ml-4">User analytics will appear here</span>
+          <TabsContent value="buyer" className="space-y-4 mt-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Buyer Analytics</h2>
+              <Select
+                onValueChange={(val) => setSelectedBuyer(val)}
+                defaultValue={selectedBuyer ?? undefined}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Select buyer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {buyers.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </TabsContent>
 
-          <TabsContent value="sellers" className="mt-4">
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              <Store className="h-16 w-16" />
-              <span className="ml-4">Seller analytics will appear here</span>
-            </div>
-          </TabsContent>
+            {!currentBuyer && (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <Users className="h-6 w-6 mr-2" />
+                Pick a buyer to view detailed stats
+              </div>
+            )}
 
-          <TabsContent value="products" className="mt-4">
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-              <ShoppingBag className="h-16 w-16" />
-              <span className="ml-4">Product analytics will appear here</span>
-            </div>
+            {currentBuyer && (
+              <StatsGrid
+                revenue={currentBuyer.spent}
+                orders={currentBuyer.orders}
+                users={1}
+                growthRevenue={currentBuyer.growth}
+                growthOrders={currentBuyer.growth / 2}
+                growthUsers={0}
+              />
+            )}
           </TabsContent>
         </Tabs>
 
@@ -439,7 +309,8 @@ export default function AdminAnalyticsPage() {
                 </CardDescription>
               </div>
               <Button variant="outline" size="sm">
-                <ArrowRight className="h-4 w-4 mr-2" /> View All
+                <ArrowRight className="h-4 w-4 mr-2" />
+                View All
               </Button>
             </div>
           </CardHeader>

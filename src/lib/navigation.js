@@ -43,24 +43,19 @@ const adminRoutes = [
     icon: BarChart2,
   },
   {
-    title: "Reports",
-    url: "/dashboard/admin/reports",
-    icon: FileText,
-  },
-  {
     title: "System Settings",
     url: "/dashboard/admin/settings",
     icon: Settings,
   },
   {
-    title: "Security",
-    url: "/dashboard/admin/security",
-    icon: Lock,
-  },
-  {
     title: "Feedbacks",
     url: "/dashboard/admin/feedbacks",
     icon: MessageSquare,
+  },
+  {
+    title: "Visit Site",
+    url: "/",
+    icon: Store,
   },
 ];
 

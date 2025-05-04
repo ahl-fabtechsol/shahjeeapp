@@ -238,12 +238,6 @@ export default function AdminFeedbacksPage() {
 
   const filteredFeedbacks = getFilteredFeedbacks();
 
-  const getRatingColor = (rating) => {
-    if (rating >= 4) return "text-green-500";
-    if (rating >= 3) return "text-yellow-500";
-    return "text-red-500";
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
       case "Published":
@@ -278,22 +272,9 @@ export default function AdminFeedbacksPage() {
               Manage and respond to user feedback across the platform.
             </p>
           </div>
-          <Button>
-            <MessageSquare className="h-4 w-4 mr-2" /> Compose Response
-          </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <div className="flex justify-between items-center mb-4">
-            <TabsList>
-              <TabsTrigger value="all">All Feedbacks</TabsTrigger>
-              <TabsTrigger value="product">Product Reviews</TabsTrigger>
-              <TabsTrigger value="seller">Seller Feedback</TabsTrigger>
-              <TabsTrigger value="platform">Platform Feedback</TabsTrigger>
-              <TabsTrigger value="flagged">Flagged</TabsTrigger>
-            </TabsList>
-          </div>
-
+        <div className="mt-4">
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -305,26 +286,9 @@ export default function AdminFeedbacksPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-              <Select defaultValue="newest">
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest first</SelectItem>
-                  <SelectItem value="oldest">Oldest first</SelectItem>
-                  <SelectItem value="rating-high">Highest rating</SelectItem>
-                  <SelectItem value="rating-low">Lowest rating</SelectItem>
-                  <SelectItem value="helpful">Most helpful</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
-          <TabsContent value={activeTab} className="mt-0">
+          <div className="mt-0">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredFeedbacks.map((feedback) => (
                 <motion.div
@@ -445,8 +409,8 @@ export default function AdminFeedbacksPage() {
                 <p>No feedbacks found matching your criteria</p>
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         {selectedFeedback && (
           <Card className="mt-6">
@@ -531,7 +495,7 @@ export default function AdminFeedbacksPage() {
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between flex-wrap gap-4">
               <div className="flex gap-2">
                 <Button variant="outline">
                   <Flag className="h-4 w-4 mr-2" /> Flag
