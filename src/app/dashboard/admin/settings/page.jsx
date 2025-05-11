@@ -139,37 +139,6 @@ export default function AdminSettingsPage() {
     },
   ];
 
-  const categories = [
-    {
-      id: 1,
-      name: "Electronics",
-      description: "Gadgets, devices, and tech accessories",
-      productCount: 120,
-      featured: true,
-    },
-    {
-      id: 2,
-      name: "Clothing",
-      description: "Apparel for men, women, and children",
-      productCount: 250,
-      featured: true,
-    },
-    {
-      id: 3,
-      name: "Home & Kitchen",
-      description: "Furniture, appliances, and home decor",
-      productCount: 180,
-      featured: false,
-    },
-    {
-      id: 4,
-      name: "Beauty & Personal Care",
-      description: "Cosmetics, skincare, and personal hygiene products",
-      productCount: 150,
-      featured: false,
-    },
-  ];
-
   const handleAddEdit = (type, item = null) => {
     setEditMode(!!item);
     setCurrentItem(item);
@@ -244,9 +213,6 @@ export default function AdminSettingsPage() {
               Manage your landing page content and appearance
             </p>
           </div>
-          <Button>
-            <Save className="h-4 w-4 mr-2" /> Save All Changes
-          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">

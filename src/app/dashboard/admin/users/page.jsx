@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Check,
   Eye,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { CustomTable } from "@/components/customTable";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +42,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { deleteUser, getAllUsers, updateUser } from "@/services/adminUser";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import UserDialog from "./(components)/userDialog";
+import { toast } from "sonner";
 
 const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
@@ -55,207 +57,71 @@ const noScrollbarStyle = `
   }
 `;
 
-const users = [
-  {
-    id: "USR-1001",
-    name: "Emma Wilson",
-    email: "emma.wilson@example.com",
-    phone: "+1 (555) 123-4567",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Active",
-    role: "Customer",
-    verified: true,
-    joinDate: "2022-01-10",
-    lastActive: "2023-04-15",
-    orders: 12,
-    totalSpent: 1249.99,
-  },
-  {
-    id: "USR-1002",
-    name: "James Rodriguez",
-    email: "james.r@example.com",
-    phone: "+1 (555) 234-5678",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Active",
-    role: "Customer",
-    verified: true,
-    joinDate: "2022-03-15",
-    lastActive: "2023-04-14",
-    orders: 8,
-    totalSpent: 879.95,
-  },
-  {
-    id: "USR-1003",
-    name: "Sophia Chen",
-    email: "sophia.c@example.com",
-    phone: "+1 (555) 345-6789",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Active",
-    role: "Seller",
-    verified: true,
-    joinDate: "2022-05-20",
-    lastActive: "2023-04-10",
-    orders: 5,
-    totalSpent: 549.97,
-  },
-  {
-    id: "USR-1004",
-    name: "Michael Brown",
-    email: "michael.b@example.com",
-    phone: "+1 (555) 456-7890",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Inactive",
-    role: "Customer",
-    verified: true,
-    joinDate: "2022-07-05",
-    lastActive: "2023-02-22",
-    orders: 3,
-    totalSpent: 329.99,
-  },
-  {
-    id: "USR-1005",
-    name: "Olivia Johnson",
-    email: "olivia.j@example.com",
-    phone: "+1 (555) 567-8901",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Active",
-    role: "Customer",
-    verified: true,
-    joinDate: "2021-11-30",
-    lastActive: "2023-04-12",
-    orders: 15,
-    totalSpent: 1599.95,
-  },
-  {
-    id: "USR-1006",
-    name: "William Davis",
-    email: "william.d@example.com",
-    phone: "+1 (555) 678-9012",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Inactive",
-    role: "Customer",
-    verified: false,
-    joinDate: "2022-09-10",
-    lastActive: "2023-01-15",
-    orders: 2,
-    totalSpent: 159.98,
-  },
-  {
-    id: "USR-1007",
-    name: "Ava Martinez",
-    email: "ava.m@example.com",
-    phone: "+1 (555) 789-0123",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Active",
-    role: "Seller",
-    verified: true,
-    joinDate: "2022-02-18",
-    lastActive: "2023-04-05",
-    orders: 9,
-    totalSpent: 899.92,
-  },
-  {
-    id: "USR-1008",
-    name: "Robert Taylor",
-    email: "robert.t@example.com",
-    phone: "+1 (555) 890-1234",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Active",
-    role: "Admin",
-    verified: true,
-    joinDate: "2021-08-15",
-    lastActive: "2023-04-15",
-    orders: 0,
-    totalSpent: 0,
-  },
-  {
-    id: "USR-1009",
-    name: "Ethan Wilson",
-    email: "ethan.w@example.com",
-    phone: "+1 (555) 901-2345",
-    avatar: "/placeholder.svg?height=40&width=40",
-    status: "Suspended",
-    role: "Customer",
-    verified: true,
-    joinDate: "2022-04-22",
-    lastActive: "2023-03-10",
-    orders: 4,
-    totalSpent: 429.96,
-  },
-];
-
 export default function AdminUsersPage() {
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [mode, setMode] = useState("add");
   const [currentUser, setCurrentUser] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const queryClient = useQueryClient();
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
+  const [userStatus, setUserStatus] = useState("");
 
-  const openAdd = () => {
-    setMode("add");
-    setCurrentUser(null);
-    setDrawerOpen(true);
+  const {
+    data: usersData,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["users", page, limit, userStatus],
+    queryFn: () => getAllUsers({ page, limit, userStatus }),
+    keepPreviousData: true,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Delete failed");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, status }) => updateUser(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Update failed");
+    },
+  });
+
+  const handleDeactivate = (id) => {
+    toast.promise(updateMutation.mutateAsync({ id, status: "I" }), {
+      loading: "Deactivating User…",
+      success: "User deactivated successfully!",
+      error: (err) => err?.response?.data?.message || "Deactivate failed",
+    });
   };
 
-  const openEdit = (u) => {
-    setMode("edit");
-    setCurrentUser(u);
-    setDrawerOpen(true);
+  const handleActivate = (id) => {
+    toast.promise(updateMutation.mutateAsync({ id, status: "A" }), {
+      loading: "Activating User…",
+      success: "User activated successfully!",
+      error: (err) => err?.response?.data?.message || "Activate failed",
+    });
   };
-
-  const openView = (u) => {
-    setMode("view");
-    setCurrentUser(u);
-    setDrawerOpen(true);
+  const handleDelete = async () => {
+    await toast.promise(deleteMutation.mutateAsync(currentUser._id), {
+      loading: "Deleting User...",
+      success: "User deleted successfully!",
+      error: (err) => err.response?.data?.message || "Delete failed",
+    });
   };
-
-  const handleSubmit = (m, user) => {
-    if (m === "add") {
-    } else if (m === "edit") {
-    }
-  };
-
-  const getFilteredUsers = () => {
-    let filtered = users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.id.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    if (activeTab === "active") {
-      filtered = filtered.filter((user) => user.status === "Active");
-    } else if (activeTab === "inactive") {
-      filtered = filtered.filter((user) => user.status === "Inactive");
-    } else if (activeTab === "suspended") {
-      filtered = filtered.filter((user) => user.status === "Suspended");
-    } else if (activeTab === "unverified") {
-      filtered = filtered.filter((user) => !user.verified);
-    }
-
-    return filtered;
-  };
-
-  const filteredUsers = getFilteredUsers();
-
-  const handleSelectAll = () => {
-    if (selectedUsers.length === filteredUsers.length) {
-      setSelectedUsers([]);
-    } else {
-      setSelectedUsers(filteredUsers.map((u) => u.id));
-    }
-  };
-
-  const handleSelectUser = (userId) => {
-    if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
-    } else {
-      setSelectedUsers([...selectedUsers, userId]);
-    }
-  };
-
-  const isSelected = (userId) => selectedUsers.includes(userId);
 
   const getInitials = (name) => {
     return name
@@ -266,62 +132,67 @@ export default function AdminUsersPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Active":
+      case "A":
         return "bg-green-50 text-green-700 border-green-200";
-      case "Inactive":
+      case "I":
         return "bg-gray-50 text-gray-700 border-gray-200";
-      case "Suspended":
+      case "S":
         return "bg-red-50 text-red-700 border-red-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "A":
+        return "Active";
+      case "I":
+        return "Inactive";
+      case "S":
+        return "Suspended";
+      default:
+        return "Unknown";
+    }
+  };
+
   const getRoleColor = (role) => {
     switch (role) {
-      case "Admin":
+      case "M":
         return "bg-purple-50 text-purple-700 border-purple-200";
-      case "Seller":
+      case "S":
         return "bg-blue-50 text-blue-700 border-blue-200";
-      case "Customer":
+      case "B":
         return "bg-green-50 text-green-700 border-green-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
 
-  const tableColumns = [
-    {
-      id: "select",
-      accessorKey: "id",
-      header: () => (
-        <Checkbox
-          checked={
-            selectedUsers.length === filteredUsers.length &&
-            filteredUsers.length > 0
-          }
-          onCheckedChange={handleSelectAll}
-        />
-      ),
-      cell: (info) => (
-        <Checkbox
-          checked={isSelected(info.getValue())}
-          onCheckedChange={() => handleSelectUser(info.getValue())}
-        />
-      ),
-    },
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "M":
+        return "Manager";
+      case "S":
+        return "Seller";
+      case "B":
+        return "Buyer";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const columns = [
     {
       accessorKey: "avatar",
       header: "Avatar",
       cell: (info) => (
         <Avatar className="w-10 h-10">
           <AvatarImage
-            src={info.getValue()}
-            alt={users.find((u) => u.id === info.row.original.id).name}
+            src={info.row.original.image}
+            alt={info.row.original.name}
           />
-          <AvatarFallback>
-            {getInitials(users.find((u) => u.id === info.row.original.id).name)}
-          </AvatarFallback>
+          <AvatarFallback>{getInitials(info.row.original.name)}</AvatarFallback>
         </Avatar>
       ),
     },
@@ -343,11 +214,9 @@ export default function AdminUsersPage() {
       cell: (info) => (
         <Badge
           variant="outline"
-          className={getRoleColor(
-            users.find((u) => u.id === info.row.original.id).role
-          )}
+          className={getRoleColor(info.row.original.role)}
         >
-          {users.find((u) => u.id === info.row.original.id).role}
+          {getRoleLabel(info.row.original.role)}
         </Badge>
       ),
     },
@@ -357,28 +226,18 @@ export default function AdminUsersPage() {
       cell: (info) => (
         <Badge
           variant="outline"
-          className={getStatusColor(
-            users.find((u) => u.id === info.row.original.id).status
-          )}
+          className={getStatusColor(info.row.original.status)}
         >
-          {users.find((u) => u.id === info.row.original.id).status}
+          {getStatusLabel(info.row.original.status)}
         </Badge>
       ),
     },
-    {
-      accessorKey: "verified",
-      header: "Verified",
-      cell: (info) =>
-        users.find((u) => u.id === info.row.original.id).verified ? (
-          <Check className="h-5 w-5 text-green-500" />
-        ) : (
-          <X className="h-5 w-5 text-red-500" />
-        ),
-    },
+
     {
       accessorKey: "joinDate",
       header: "Join Date",
-      cell: (info) => users.find((u) => u.id === info.row.original.id).joinDate,
+      cell: (info) =>
+        new Date(info.row.original.createdAt).toLocaleDateString(),
     },
     {
       accessorKey: "actions",
@@ -393,28 +252,51 @@ export default function AdminUsersPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => openView(info.row.original)}>
+            <DropdownMenuItem
+              onClick={() => {
+                setMode("view");
+                setCurrentUser(info.row.original);
+                setModalOpen(true);
+              }}
+            >
               <Eye className="h-4 w-4 mr-2" /> View Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => openEdit(info.row.original)}>
+            <DropdownMenuItem
+              onClick={() => {
+                setMode("edit");
+                setCurrentUser(info.row.original);
+                setModalOpen(true);
+              }}
+            >
               <UserCog className="h-4 w-4 mr-2" /> Edit User
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
-            {info.row.original.status === "Active" ? (
-              <DropdownMenuItem>
+            {info.row.original.status === "A" ? (
+              <DropdownMenuItem
+                onClick={() => {
+                  handleDeactivate(info.row.original._id);
+                }}
+              >
                 <X className="h-4 w-4 mr-2" /> Deactivate
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  handleActivate(info.row.original._id);
+                }}
+              >
                 <Check className="h-4 w-4 mr-2" /> Activate
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem>
-              <Shield className="h-4 w-4 mr-2" /> Change Role
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => {
+                setCurrentUser(info.row.original);
+                setDeleteConfirmation(true);
+              }}
+            >
               <Trash2 className="h-4 w-4 mr-2" /> Delete User
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -425,13 +307,20 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-4">
-      {drawerOpen && (
+      {deleteConfirmation && (
+        <ConfirmationModal
+          open={deleteConfirmation}
+          onOpenChange={setDeleteConfirmation}
+          title="Are you sure you want to delete this User ?"
+          onConfirm={handleDelete}
+        />
+      )}
+      {modalOpen && (
         <UserDialog
-          open={drawerOpen}
+          open={modalOpen}
           mode={mode}
-          initialUser={currentUser}
-          onOpenChange={setDrawerOpen}
-          onSubmit={handleSubmit}
+          currentUser={currentUser}
+          onOpenChange={setModalOpen}
         />
       )}
       <style>{noScrollbarStyle}</style>
@@ -445,7 +334,14 @@ export default function AdminUsersPage() {
               Manage and monitor user accounts across the platform.
             </p>
           </div>
-          <Button className="sm:w-auto" onClick={openAdd}>
+          <Button
+            className="sm:w-auto"
+            onClick={() => {
+              setMode("add");
+              setCurrentUser(null);
+              setModalOpen(true);
+            }}
+          >
             <UserPlus className="h-4 w-4 mr-2" /> Add User
           </Button>
         </div>
@@ -460,27 +356,23 @@ export default function AdminUsersPage() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Users</span>
-                  <span className="font-medium">{users.length}</span>
+                  <span className="font-medium">
+                    {usersData?.results?.length || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Active Users</span>
                   <span className="font-medium">
-                    {users.filter((u) => u.status === "Active").length}
+                    {usersData?.results?.filter((u) => u.status === "A")
+                      ?.length || 0}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Suspended Users</span>
                   <span className="font-medium">
-                    {users.filter((u) => u.status === "Suspended").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    Unverified Users
-                  </span>
-                  <span className="font-medium">
-                    {users.filter((u) => !u.verified).length}
+                    {usersData?.results?.filter((u) => u.status === "S")
+                      ?.length || 0}
                   </span>
                 </div>
               </div>
@@ -493,8 +385,9 @@ export default function AdminUsersPage() {
                       <span className="text-muted-foreground">Customers</span>
                       <span className="font-medium">
                         {Math.round(
-                          (users.filter((u) => u.role === "Customer").length /
-                            users.length) *
+                          (usersData?.results?.filter((u) => u.role === "B")
+                            ?.length /
+                            usersData?.results?.length) *
                             100
                         )}
                         %
@@ -502,8 +395,9 @@ export default function AdminUsersPage() {
                     </div>
                     <Progress
                       value={
-                        (users.filter((u) => u.role === "Customer").length /
-                          users.length) *
+                        (usersData?.results?.filter((u) => u.role === "B")
+                          ?.length /
+                          usersData?.results?.length) *
                         100
                       }
                       className="h-2"
@@ -514,8 +408,9 @@ export default function AdminUsersPage() {
                       <span className="text-muted-foreground">Sellers</span>
                       <span className="font-medium">
                         {Math.round(
-                          (users.filter((u) => u.role === "Seller").length /
-                            users.length) *
+                          (usersData?.results?.filter((u) => u.role === "S")
+                            ?.length /
+                            usersData?.results?.length) *
                             100
                         )}
                         %
@@ -523,8 +418,9 @@ export default function AdminUsersPage() {
                     </div>
                     <Progress
                       value={
-                        (users.filter((u) => u.role === "Seller").length /
-                          users.length) *
+                        (usersData?.results?.filter((u) => u.role === "S")
+                          ?.length /
+                          usersData?.results?.length) *
                         100
                       }
                       className="h-2"
@@ -532,11 +428,12 @@ export default function AdminUsersPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Admins</span>
+                      <span className="text-muted-foreground">Managers</span>
                       <span className="font-medium">
                         {Math.round(
-                          (users.filter((u) => u.role === "Admin").length /
-                            users.length) *
+                          (usersData?.results?.filter((u) => u.role === "M")
+                            ?.length /
+                            usersData?.results?.length) *
                             100
                         )}
                         %
@@ -544,8 +441,9 @@ export default function AdminUsersPage() {
                     </div>
                     <Progress
                       value={
-                        (users.filter((u) => u.role === "Admin").length /
-                          users.length) *
+                        (usersData?.results?.filter((u) => u.role === "M")
+                          ?.length /
+                          usersData?.results?.length) *
                         100
                       }
                       className="h-2"
@@ -560,16 +458,22 @@ export default function AdminUsersPage() {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center gap-2">
                 <CardTitle>User Management</CardTitle>
-                <Select className="">
+                <Select
+                  className=""
+                  value={userStatus}
+                  onValueChange={(value) => {
+                    setUserStatus(value === "all" ? "" : value);
+                    setPage(1);
+                  }}
+                >
                   <SelectTrigger className="">
                     <SelectValue placeholder="Filter users…" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Users</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="suspended">Suspended</SelectItem>
-                    <SelectItem value="unverified">Unverified</SelectItem>
+                    <SelectItem value="A">Active</SelectItem>
+                    <SelectItem value="I">Inactive</SelectItem>
+                    <SelectItem value="S">Suspended</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -587,57 +491,20 @@ export default function AdminUsersPage() {
               </div>
 
               <CustomTable
-                data={users}
-                columns={tableColumns}
-                loading={false}
+                data={usersData?.results || []}
+                columns={columns}
+                loading={isLoading || isFetching}
+                page={page}
+                limit={limit}
+                total={usersData?.count || 0}
+                onPageChange={setPage}
+                onPageSizeChange={setLimit}
                 editable={false}
-                pagination={true}
+                pagination
               />
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent User Activity</CardTitle>
-            <CardDescription>
-              Latest user actions on the platform
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {users
-                .filter((u) => u.status === "Active")
-                .slice(0, 5)
-                .map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border rounded-md"
-                  >
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage
-                        src={user.avatar || "/placeholder.svg"}
-                        alt={user.name}
-                      />
-                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1 min-w-0">
-                      <p className="text-sm font-medium leading-none">
-                        {user.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate text-wrap">
-                        Last active on {user.lastActive} ({user.orders} total
-                        orders)
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -71,7 +71,7 @@ export default function CategoryDialog({ mode, category, open, onOpenChange }) {
   });
 
   const onSubmit = async (values) => {
-    let imageUrl = null;
+    let imageUrl = preview;
     if (values.image && values.image[0]) {
       setUploading(true);
       imageUrl = await s3Uploader(values.image[0], setUploading);
@@ -173,7 +173,7 @@ export default function CategoryDialog({ mode, category, open, onOpenChange }) {
               variant="outline"
               type="button"
               onClick={() => onOpenChange(false)}
-              disabled={uploading || mutation.isLoading}
+              disabled={uploading || mutation.isLoading || mutation.isPending}
             >
               Cancel
             </Button>
