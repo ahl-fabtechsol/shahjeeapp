@@ -9,6 +9,23 @@ export const useAuthStore = create(
       accessToken: null,
       refreshToken: null,
       user: null,
+      isLoggedIn: false,
+
+      login: ({ accessToken, refreshToken, user }) =>
+        set({
+          accessToken,
+          refreshToken,
+          user,
+          isLoggedIn: true,
+        }),
+
+      logout: () =>
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isLoggedIn: false,
+        }),
 
       setUser: (user) => set({ user }),
       setTokens: (accessToken, refreshToken) =>
@@ -26,7 +43,9 @@ export const useAuthStore = create(
 export const getAccessToken = () => useAuthStore.getState().accessToken;
 export const getRefreshToken = () => useAuthStore.getState().refreshToken;
 export const getUser = () => useAuthStore.getState().user;
-
+export const isLoggedIn = () => useAuthStore.getState().isLoggedIn;
+export const login = (data) => useAuthStore.getState().login(data);
+export const logout = () => useAuthStore.getState().logout();
 export const setUser = (user) => useAuthStore.getState().setUser(user);
 export const setTokens = (at, rt) => useAuthStore.getState().setTokens(at, rt);
 export const clearTokens = () => useAuthStore.getState().clearTokens();

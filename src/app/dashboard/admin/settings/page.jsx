@@ -43,6 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import CategoriesActionPage from "./(tabs)/CategoriesActionPage";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("sliders");
@@ -585,89 +586,7 @@ export default function AdminSettingsPage() {
           </TabsContent>
 
           <TabsContent value="categories" className="mt-6">
-            <motion.div
-              variants={containerAnimation}
-              initial="hidden"
-              animate="show"
-            >
-              <Card>
-                <CardHeader className="flex gap-4 flex-wrap flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Category Management</CardTitle>
-                    <CardDescription>
-                      Manage product categories for your e-commerce platform
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => handleAddEdit("category")}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Category
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          Description
-                        </TableHead>
-                        <TableHead>Products</TableHead>
-                        <TableHead>Featured</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categories.map((category) => (
-                        <motion.tr
-                          key={category.id}
-                          variants={itemAnimation}
-                          className="group"
-                        >
-                          <TableCell className="font-medium">
-                            {category.name}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-muted-foreground">
-                            {category.description.length > 40
-                              ? `${category.description.substring(0, 40)}...`
-                              : category.description}
-                          </TableCell>
-                          <TableCell>{category.productCount}</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={category.featured}
-                              onCheckedChange={() =>
-                                toggleFeature("category", category.id)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleAddEdit("category", category)
-                                }
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleDelete("category", category.id)
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </motion.tr>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <CategoriesActionPage />
           </TabsContent>
         </Tabs>
       </div>
@@ -737,7 +656,6 @@ export default function AdminSettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Product Dialog */}
       <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -819,7 +737,6 @@ export default function AdminSettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Feedback Dialog */}
       <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -907,7 +824,6 @@ export default function AdminSettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Category Dialog */}
       <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>

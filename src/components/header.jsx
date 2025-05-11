@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -10,11 +10,22 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
-import { ShoppingCart, User, Menu, Globe } from "lucide-react";
+import { ShoppingCart, User, Menu, Globe, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getUser, isLoggedIn, logout } from "@/store/authStore";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export default function Header() {
   const pathname = usePathname();
+  const loggedIn = isLoggedIn();
+  const router = useRouter();
+  const user = getUser();
+  const userDashboard =
+    user?.role === "S"
+      ? "/dashboard/seller"
+      : user?.role === "AD"
+      ? "/dashboard/admin"
+      : "/dashboard/buyer";
 
   const routes = [
     { href: "/", label: "Home" },
@@ -23,6 +34,11 @@ export default function Header() {
     { href: "/deals", label: "Deals" },
     { href: "/about", label: "About Us" },
   ];
+
+  const handleLogout = () => {
+    logout();
+    router.push("/auth/login");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -139,22 +155,43 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/auth/login">
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-              <span className="sr-only">Account</span>
-            </Button>
-          </Link>
+          {loggedIn ? (
+            <Link href={userDashboard} className="cursor-pointer">
+              <Button variant="ghost" size="icon">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.image} alt="User" />
+                  <AvatarFallback>{user?.name[0]}</AvatarFallback>
+                </Avatar>
+                <span className="sr-only">Account</span>
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/auth/login" className="cursor-pointer">
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Account</span>
+              </Button>
+            </Link>
+          )}
 
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                3
-              </Badge>
-              <span className="sr-only">Cart</span>
+          {loggedIn && (
+            <Link href="/cart" className="cursor-pointer">
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                  3
+                </Badge>
+                <span className="sr-only">Cart</span>
+              </Button>
+            </Link>
+          )}
+
+          {loggedIn && (
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">Logout</span>
             </Button>
-          </Link>
+          )}
         </div>
       </div>
     </header>

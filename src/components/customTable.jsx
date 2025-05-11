@@ -179,6 +179,7 @@ export function CustomTable({
                     <div className="flex items-center space-x-1">
                       <Input
                         type="number"
+                        disabled
                         value={page}
                         onChange={(e) => {
                           const p = e.target.value ? Number(e.target.value) : 1;

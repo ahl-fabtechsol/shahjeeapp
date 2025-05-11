@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { loginAPI } from "@/services/auth";
-import { setTokens, setUser } from "@/store/authStore";
+import { login } from "@/store/authStore";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -36,8 +36,7 @@ export default function Login() {
   const mutation = useMutation({
     mutationFn: (formData) => loginAPI(formData),
     onSuccess: (data) => {
-      setTokens(data.accessToken, data.refreshToken);
-      setUser(data.user);
+      login(data);
       router.push("/");
     },
     onError: (error) => {
