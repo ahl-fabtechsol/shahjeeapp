@@ -1,19 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  Edit,
-  ImageIcon,
-  LayoutDashboard,
-  Layers,
-  MessageSquare,
-  Plus,
-  Save,
-  ShoppingBag,
-  Star,
-  Trash2,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -42,7 +29,19 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { motion } from "framer-motion";
+import {
+  Edit,
+  ImageIcon,
+  Layers,
+  LayoutDashboard,
+  MessageSquare,
+  Plus,
+  ShoppingBag,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
 import CategoriesActionPage from "./(tabs)/CategoriesActionPage";
 
 export default function AdminSettingsPage() {

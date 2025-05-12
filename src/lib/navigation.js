@@ -85,6 +85,11 @@ const buyerRoutes = [
     url: "/dashboard/buyer/settings",
     icon: Settings,
   },
+  {
+    title: "Visit Site",
+    url: "/",
+    icon: Store,
+  },
 ];
 
 const sellerRoutes = [
@@ -127,6 +132,11 @@ const sellerRoutes = [
     title: "Settings",
     url: "/dashboard/seller/settings",
     icon: Settings,
+  },
+  {
+    title: "Visit Site",
+    url: "/",
+    icon: Store,
   },
 ];
 

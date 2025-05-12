@@ -5,7 +5,8 @@ export const getAllUsers = ({ page, limit, userStatus }) =>
     .get("/user", { params: { page, limit, status: userStatus } })
     .then((res) => res.data);
 
-export const getUser = (id) => api.get(`/user/${id}`).then((res) => res.data);
+export const getUser = (id) =>
+  api.get(`/user/${id}`).then((res) => res.data.user);
 
 export const createUser = (payload) =>
   api.post("/user/signup", payload).then((res) => res.data);
