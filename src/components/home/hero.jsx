@@ -1,17 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
+import { getUser, isLoggedIn } from "@/store/authStore";
 import Autoplay from "embla-carousel-autoplay";
-import { useRef } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { useRef } from "react";
 
 const slides = [
   {
@@ -36,6 +35,8 @@ const slides = [
 
 export default function Hero() {
   const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: false }));
+  const loggedIn = isLoggedIn();
+  const user = getUser();
 
   return (
     <div className="relative overflow-hidden bg-background">
@@ -74,9 +75,15 @@ export default function Hero() {
           <Button size="lg" asChild>
             <Link href="/products">Browse Products</Link>
           </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/sellers">Find Sellers</Link>
-          </Button>
+          {loggedIn && user.role !== "B" ? (
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/sellers">Find Sellers</Link>
+            </Button>
+          ) : (
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/become-seller">Become a Seller</Link>
+            </Button>
+          )}
         </motion.div>
 
         <Carousel
