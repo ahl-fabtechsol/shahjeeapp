@@ -1,6 +1,8 @@
 import { api } from "./api";
-export const getSellerStores = ({ page, limit }) =>
-  api.get("/seller-store", { params: { page, limit } }).then((res) => res.data);
+export const getSellerStores = ({ page, limit, seller }) =>
+  api
+    .get("/seller-store", { params: { page, limit, seller } })
+    .then((res) => res.data);
 
 export const getSellerStore = (id) =>
   api.get(`/seller-store/${id}`).then((res) => res.data);

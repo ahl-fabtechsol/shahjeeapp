@@ -1,11 +1,5 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,9 +17,15 @@ import {
   getUser as getUserApi,
   updateUser as updateUserApi,
 } from "@/services/adminUser";
-import { getUser } from "@/store/authStore";
 import { s3Uploader } from "@/services/s3Uploader";
-import { Loader2, Trash2, UploadCloud } from "lucide-react";
+import { getUser } from "@/store/authStore";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -47,6 +47,7 @@ export default function SellerProfile() {
     queryFn: () => getUserApi(userId),
     enabled: Boolean(userId),
     staleTime: 300_000,
+    retry: 1,
   });
 
   const {
@@ -62,13 +63,6 @@ export default function SellerProfile() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [isImageUploading, setIsImageUploading] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      reset({ name: user.name, email: user.email, phone: user.phone });
-      setPreviewUrl(user.image);
-    }
-  }, [user, reset]);
 
   const updateMutation = useMutation({
     mutationFn: (payload) => updateUserApi(userId, payload),
@@ -99,6 +93,13 @@ export default function SellerProfile() {
     updateMutation.mutate({ ...values, image: uploadedUrl });
   };
 
+  useEffect(() => {
+    if (user) {
+      reset({ name: user.name, email: user.email, phone: user.phone });
+      setPreviewUrl(user.image);
+    }
+  }, [user, reset]);
+
   if (isFetching) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -107,7 +108,18 @@ export default function SellerProfile() {
     );
   }
   if (isFetchError) {
-    return <div>Error loading profile: {String(fetchError)}</div>;
+    toast.error(
+      `${fetchError?.response?.data?.message || "Error while fetching"}`,
+      {
+        description: "Please try again later.",
+      }
+    );
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching user data</p>
+        <p>{fetchError?.response?.data?.message || "Error"}</p>
+      </div>
+    );
   }
 
   return (
