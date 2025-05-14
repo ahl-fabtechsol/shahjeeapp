@@ -3,6 +3,7 @@ import {
   getAccessToken,
   setAccessToken,
   getRefreshToken,
+  logout,
 } from "../store/authStore";
 import { refreshTokenAPI } from "../services/auth";
 
@@ -25,12 +26,19 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !originalReq._retry) {
       originalReq._retry = true;
       try {
-        const data = await refreshTokenAPI(getRefreshToken());
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          logout();
+          window.location.href = "/auth/login";
+          return Promise.reject(err);
+        }
+        const data = await refreshTokenAPI(refreshToken);
         setAccessToken(data.accessToken);
         originalReq.headers["Authorization"] = `Bearer ${data.accessToken}`;
         return api(originalReq);
       } catch {
-        window.location.href = "auth/login";
+        logout();
+        window.location.href = "/auth/login";
         return Promise.reject(err);
       }
     }
