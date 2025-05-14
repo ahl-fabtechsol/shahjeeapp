@@ -14,3 +14,13 @@ export const updateProduct = (id, payload) =>
 
 export const deleteProduct = (id) =>
   api.delete(`/product/${id}`).then((res) => res.data);
+
+export const getAllProductsSite = ({ page, limit, category, price, search }) =>
+  api
+    .get("/product/site", {
+      params: { page, limit, category, price, name: search },
+    })
+    .then((res) => res.data);
+
+export const getProductDetailSite = (id) =>
+  api.get(`/product/site/${id}`).then((res) => res.data);

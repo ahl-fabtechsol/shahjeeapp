@@ -16,6 +16,7 @@ import {
   Check,
   ArrowLeft,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,12 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getAllProductsSite,
+  getProductDetailSite,
+} from "@/services/productService";
+import StarRating from "../(components)/startRating";
 
 export default function ProductPage({ params }) {
   const [selectedImage, setSelectedImage] = useState(0);
@@ -45,6 +52,36 @@ export default function ProductPage({ params }) {
   const [wishlist, setWishlist] = useState(false);
   const id = useParams().id;
 
+  const {
+    data: productData,
+    isLoading: isProductLoading,
+    isError: isProductError,
+    error: productError,
+    isFetching: isProductFetching,
+  } = useQuery({
+    queryKey: ["product", id],
+    queryFn: () => getProductDetailSite(id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!id,
+  });
+
+  const {
+    data: relatedProducts,
+    isLoading: isRelatedLoading,
+    isError: isRelatedError,
+    error: relatedError,
+    isFetching: isRelatedFetching,
+  } = useQuery({
+    queryKey: ["realtedProducts", id],
+    queryFn: () =>
+      getAllProductsSite({
+        page: 1,
+        limit: 10,
+        category: productData?.results[0]?.category?._id,
+      }),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!id && !!productData?.results[0]?.category?._id,
+  });
   const product = {
     id: id || "1",
     name: "Wireless Earbuds Pro",
@@ -92,7 +129,7 @@ export default function ProductPage({ params }) {
   };
 
   const incrementQuantity = () => {
-    if (quantity < product.stock) {
+    if (quantity < productData?.results[0]?.quantity) {
       setQuantity(quantity + 1);
     }
   };
@@ -123,6 +160,25 @@ export default function ProductPage({ params }) {
     },
   };
 
+  if (isProductError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching product data</p>
+        <p>{productError?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (isProductLoading || isProductFetching) {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        <div className="flex justify-center items-center">
+          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial="hidden"
@@ -148,14 +204,10 @@ export default function ProductPage({ params }) {
           Products
         </Link>
         <ChevronRight className="h-4 w-4 mx-2 text-muted-foreground flex-shrink-0" />
-        <Link
-          href={`/categories/${product.category.toLowerCase()}`}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {product.category}
-        </Link>
-        <ChevronRight className="h-4 w-4 mx-2 text-muted-foreground flex-shrink-0" />
-        <span className="font-medium truncate">{product.name}</span>
+
+        <span className="font-medium truncate">
+          {productData?.results[0]?.name}
+        </span>
       </motion.nav>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
@@ -171,20 +223,17 @@ export default function ProductPage({ params }) {
                 className="h-full w-full"
               >
                 <Image
-                  src={product.images[selectedImage] || "/placeholder.svg"}
-                  alt={product.name}
+                  src={
+                    productData?.results[0]?.images[selectedImage] ||
+                    "/placeholder.svg"
+                  }
+                  alt={productData?.results[0]?.name}
                   fill
                   className="object-cover"
                   priority
                 />
               </motion.div>
             </AnimatePresence>
-
-            {product.badge && (
-              <Badge className="absolute top-3 right-3 z-10 shadow-md">
-                {product.badge}
-              </Badge>
-            )}
 
             <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2">
               <TooltipProvider>
@@ -245,7 +294,9 @@ export default function ProductPage({ params }) {
                   className="rounded-full shadow-md opacity-80 hover:opacity-100"
                   onClick={() =>
                     setSelectedImage((prev) =>
-                      prev === 0 ? product.images.length - 1 : prev - 1
+                      prev === 0
+                        ? productData?.results[0]?.images?.length - 1
+                        : prev - 1
                     )
                   }
                 >
@@ -262,7 +313,9 @@ export default function ProductPage({ params }) {
                   className="rounded-full shadow-md opacity-80 hover:opacity-100"
                   onClick={() =>
                     setSelectedImage((prev) =>
-                      prev === product.images.length - 1 ? 0 : prev + 1
+                      prev === productData?.results[0]?.images?.length - 1
+                        ? 0
+                        : prev + 1
                     )
                   }
                 >
@@ -273,7 +326,7 @@ export default function ProductPage({ params }) {
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            {product.images.map((image, index) => (
+            {productData?.results[0]?.images?.map((image, index) => (
               <motion.div
                 key={index}
                 whileHover={{ scale: 1.05 }}
@@ -287,7 +340,7 @@ export default function ProductPage({ params }) {
               >
                 <Image
                   src={image || "/placeholder.svg"}
-                  alt={`${product.name} - Image ${index + 1}`}
+                  alt={`${productData?.results[0]?.name} - Image ${index + 1}`}
                   fill
                   className="object-cover"
                 />
@@ -298,16 +351,22 @@ export default function ProductPage({ params }) {
 
         <motion.div variants={staggerChildren} className="space-y-6">
           <motion.div variants={slideUp}>
-            <h1 className="text-3xl font-bold">{product.name}</h1>
+            <h1 className="text-3xl font-bold">
+              {productData?.results[0]?.name}
+            </h1>
             <div className="flex items-center mt-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
                     className={`h-5 w-5 ${
-                      i < Math.floor(product.rating)
+                      i <
+                      Math.floor(
+                        productData?.results[0]?.feedbackStats?.averageRating
+                      )
                         ? "text-yellow-500 fill-yellow-500"
-                        : i < product.rating
+                        : i <
+                          productData?.results[0]?.feedbackStats?.averageRating
                         ? "text-yellow-500 fill-yellow-500"
                         : "text-gray-300"
                     }`}
@@ -315,35 +374,23 @@ export default function ProductPage({ params }) {
                 ))}
               </div>
               <span className="ml-2 text-sm text-muted-foreground">
-                {product.rating} ({product.reviews} reviews)
+                {productData?.results[0]?.feedbackStats?.averageRating} (
+                {productData?.results[0]?.feedbackStats?.count} reviews)
               </span>
             </div>
           </motion.div>
 
           <motion.div variants={slideUp} className="flex items-baseline">
             <span className="text-3xl font-bold">
-              ${product.price.toFixed(2)}
+              ${productData?.results[0]?.price.toFixed(2)}
             </span>
-            {product.originalPrice && (
-              <span className="ml-2 text-lg text-muted-foreground line-through">
-                ${product.originalPrice.toFixed(2)}
-              </span>
-            )}
-            {product.originalPrice && (
-              <Badge
-                variant="outline"
-                className="ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-              >
-                Save ${(product.originalPrice - product.price).toFixed(2)}
-              </Badge>
-            )}
           </motion.div>
 
           <motion.p
             variants={slideUp}
             className="text-muted-foreground leading-relaxed"
           >
-            {product.description}
+            {productData?.results[0]?.description}
           </motion.p>
 
           <motion.div variants={slideUp} className="space-y-4">
@@ -351,44 +398,27 @@ export default function ProductPage({ params }) {
               <div className="w-24 text-sm font-medium">Availability:</div>
               <div
                 className={
-                  product.stock > 0
+                  productData?.results[0]?.quantity > 0
                     ? "text-green-600 flex items-center"
                     : "text-red-600"
                 }
               >
-                {product.stock > 0 && <Check className="h-4 w-4 mr-1" />}
-                {product.stock > 0
-                  ? `In Stock (${product.stock} available)`
+                {productData?.results[0]?.quantity > 0 && (
+                  <Check className="h-4 w-4 mr-1" />
+                )}
+                {productData?.results[0]?.quantity > 0
+                  ? `In Stock (${productData?.results[0].quantity} available)`
                   : "Out of Stock"}
               </div>
             </div>
             <div className="flex items-center">
               <div className="w-24 text-sm font-medium">Category:</div>
               <Link
-                href={`/categories/${product.category.toLowerCase()}`}
+                href={`/categories/${productData?.results[0]?.category?.name.toLowerCase()}`}
                 className="text-primary hover:underline"
               >
-                {product.category}
+                {productData?.results[0]?.category?.name}
               </Link>
-            </div>
-          </motion.div>
-
-          <motion.div variants={slideUp}>
-            <div className="w-24 text-sm font-medium mb-2">Color:</div>
-            <div className="flex space-x-2">
-              {product.colors.map((color, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`h-8 w-8 rounded-full ${
-                    color.value
-                  } cursor-pointer ${
-                    index === 0 ? "ring-2 ring-primary ring-offset-2" : ""
-                  }`}
-                  title={color.name}
-                />
-              ))}
             </div>
           </motion.div>
 
@@ -451,16 +481,6 @@ export default function ProductPage({ params }) {
               </Button>
             </motion.div>
           </motion.div>
-
-          <motion.div
-            variants={slideUp}
-            className="flex items-center text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg"
-          >
-            <Truck className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span>
-              Free shipping on orders over $50. Free returns within 30 days.
-            </span>
-          </motion.div>
         </motion.div>
       </div>
 
@@ -472,12 +492,6 @@ export default function ProductPage({ params }) {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               Description
-            </TabsTrigger>
-            <TabsTrigger
-              value="specifications"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              Specifications
             </TabsTrigger>
             <TabsTrigger
               value="reviews"
@@ -496,45 +510,9 @@ export default function ProductPage({ params }) {
                 transition={{ duration: 0.3 }}
                 className="space-y-4"
               >
-                <p className="leading-relaxed">{product.description}</p>
-                <h3 className="text-lg font-medium mt-4">Key Features</h3>
-                <ul className="grid gap-2">
-                  {product.features.map((feature, index) => (
-                    <motion.li
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-start"
-                    >
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      <span>{feature}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="specifications" className="pt-6">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="border rounded-md divide-y overflow-hidden"
-              >
-                {product.specifications.map((spec, index) => (
-                  <motion.div
-                    key={index}
-                    className="flex py-3 px-4 bg-card/50"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <div className="w-1/3 font-medium">{spec.name}</div>
-                    <div className="w-2/3">{spec.value}</div>
-                  </motion.div>
-                ))}
+                <p className="leading-relaxed">
+                  {productData?.results[0]?.description}
+                </p>
               </motion.div>
             </TabsContent>
 
@@ -555,9 +533,15 @@ export default function ProductPage({ params }) {
                           <Star
                             key={i}
                             className={`h-5 w-5 ${
-                              i < Math.floor(product.rating)
+                              i <
+                              Math.floor(
+                                productData?.results[0]?.feedbackStats
+                                  ?.averageRating
+                              )
                                 ? "text-yellow-500 fill-yellow-500"
-                                : i < product.rating
+                                : i <
+                                  productData?.results[0]?.feedbackStats
+                                    ?.averageRating
                                 ? "text-yellow-500 fill-yellow-500"
                                 : "text-gray-300"
                             }`}
@@ -565,7 +549,8 @@ export default function ProductPage({ params }) {
                         ))}
                       </div>
                       <span className="ml-2 text-sm">
-                        Based on {product.reviews} reviews
+                        Based on {productData?.results[0]?.feedbackStats?.count}{" "}
+                        reviews
                       </span>
                     </div>
                   </div>
@@ -647,53 +632,49 @@ export default function ProductPage({ params }) {
 
         <Carousel className="w-full">
           <CarouselContent className="-ml-2 md:-ml-4">
-            {[1, 2, 3, 4, 5, 6].map((id) => (
-              <CarouselItem
-                key={id}
-                className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
-              >
-                <motion.div
-                  whileHover={{ y: -5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
+            {relatedProducts?.results?.map((item, index) => {
+              item._id === productData?.results[0]?._id ? (
+                ""
+              ) : (
+                <CarouselItem
+                  key={index}
+                  className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
                 >
-                  <Link href={`/products/${id}`} className="block h-full">
-                    <Card className="overflow-hidden border-border/40 transition-all hover:shadow-md h-full">
-                      <div className="relative aspect-square overflow-hidden">
-                        <Image
-                          src="/placeholder.svg?height=300&width=300"
-                          alt="Related product"
-                          fill
-                          className="object-cover transition-transform hover:scale-105 duration-500"
-                        />
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-medium truncate">
-                          Related Product {id}
-                        </h3>
-                        <div className="flex items-center mt-1">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < 4
-                                    ? "text-yellow-500 fill-yellow-500"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-xs text-muted-foreground ml-1">
-                            (42)
-                          </span>
+                  <motion.div
+                    whileHover={{ y: -5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Link
+                      href={`/products/${item?._id}`}
+                      className="block h-full"
+                    >
+                      <Card className="overflow-hidden border-border/40 transition-all hover:shadow-md h-full">
+                        <div className="relative aspect-square overflow-hidden">
+                          <Image
+                            src={item?.images[0] || "/placeholder.svg"}
+                            alt="Related product"
+                            fill
+                            className="object-cover transition-transform hover:scale-105 duration-500"
+                          />
                         </div>
-                        <div className="font-semibold mt-2">$49.99</div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </motion.div>
-              </CarouselItem>
-            ))}
+                        <CardContent className="p-4">
+                          <h3 className="font-medium truncate">
+                            Related Product {index + 1}
+                          </h3>
+                          <StarRating
+                            rating={item?.feedbacks?.averageRating}
+                            reviews={item?.feedbacks?.count}
+                          />
+                          <div className="font-semibold mt-2">
+                            ${item?.price}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
           <div className="hidden sm:block">
             <CarouselPrevious className="left-0" />

@@ -23,26 +23,22 @@ const ProductCard = ({ product, index }) => {
         delay: index * 0.05,
         ease: "easeOut",
       }}
+      whileHover={{
+        scale: 1.02,
+      }}
+      className="transform-gpu"
     >
-      <Link href={`/products/${product.id}`} className="group block h-full">
-        <Card className="overflow-hidden border-border/40 transition-all hover:shadow-lg h-full bg-card/50 backdrop-blur-sm">
+      <Link href={`/products/${product?._id}`} className="group block h-full">
+        <Card className="overflow-hidden border-border/40 h-full bg-card/50 backdrop-blur-sm">
           <div className="relative aspect-square overflow-hidden">
-            <motion.div
-              whileHover={{ scale: 1.08 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
+            <motion.div>
               <Image
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
+                src={product?.images[0] || "/placeholder.svg"}
+                alt={product?.name}
                 fill
                 className="object-cover"
               />
             </motion.div>
-            {product.badge && (
-              <Badge className="absolute top-2 right-2 z-10 shadow-md">
-                {product.badge}
-              </Badge>
-            )}
             <div className="absolute bottom-2 right-2 z-10 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <TooltipProvider>
                 <Tooltip>
@@ -91,16 +87,19 @@ const ProductCard = ({ product, index }) => {
           </div>
           <CardContent className="p-4">
             <div className="text-sm text-muted-foreground mb-1">
-              {product.category}
+              {product?.category?.name}
             </div>
             <h3 className="font-medium text-lg truncate group-hover:text-primary transition-colors">
-              {product.name}
+              {product?.name}
             </h3>
-            <StarRating rating={product.rating} reviews={product.reviews} />
+            <StarRating
+              rating={product?.feedbacks?.averageRating}
+              reviews={product?.feedbacks?.count}
+            />
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between items-center">
             <div className="font-semibold text-lg">
-              ${product.price.toFixed(2)}
+              ${product?.price?.toFixed(2)}
             </div>
           </CardFooter>
         </Card>
