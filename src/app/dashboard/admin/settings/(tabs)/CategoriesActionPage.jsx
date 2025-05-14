@@ -27,7 +27,6 @@ export default function CategoriesActionPage() {
   const [limit, setLimit] = useState(10);
   const queryClient = useQueryClient();
   const [deleteConfirmation, setDeleteConfirmation] = useState(false);
-
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["categories", page, limit],
     queryFn: () => getCategories({ page, limit }),

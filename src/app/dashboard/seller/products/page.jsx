@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   ChevronDown,
-  Download,
   Edit,
   Filter,
+  Loader2,
   MoreHorizontal,
   Plus,
   Search,
   Trash2,
-  Upload,
 } from "lucide-react";
+import { useState } from "react";
 
+import { CustomTable } from "@/components/customTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,126 +38,237 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { getCategories } from "@/services/categoryService";
+import { deleteProduct, getProducts } from "@/services/productService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ProductDialog } from "./(components)/productDialog";
+import { set } from "date-fns";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
-// Sample product data
-const products = [
-  {
-    id: "PRD-1234",
-    name: "Wireless Headphones",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 129.99,
-    stock: 45,
-    status: "In Stock",
-    rating: 4.8,
-    sales: 234,
-  },
-  {
-    id: "PRD-5678",
-    name: "Smart Watch",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 199.99,
-    stock: 28,
-    status: "In Stock",
-    rating: 4.5,
-    sales: 187,
-  },
-  {
-    id: "PRD-9012",
-    name: "Bluetooth Speaker",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 89.99,
-    stock: 62,
-    status: "In Stock",
-    rating: 4.7,
-    sales: 156,
-  },
-  {
-    id: "PRD-3456",
-    name: "Fitness Tracker",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 79.99,
-    stock: 15,
-    status: "Low Stock",
-    rating: 4.2,
-    sales: 98,
-  },
-  {
-    id: "PRD-7890",
-    name: "Wireless Earbuds",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 149.99,
-    stock: 0,
-    status: "Out of Stock",
-    rating: 4.6,
-    sales: 210,
-  },
-  {
-    id: "PRD-2345",
-    name: "Portable Power Bank",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 49.99,
-    stock: 73,
-    status: "In Stock",
-    rating: 4.4,
-    sales: 145,
-  },
-  {
-    id: "PRD-6789",
-    name: "Wireless Charging Pad",
-    image: "/placeholder.svg?height=50&width=50",
-    category: "Electronics",
-    price: 39.99,
-    stock: 51,
-    status: "In Stock",
-    rating: 4.3,
-    sales: 122,
-  },
-];
+const noScrollbarStyle = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
 
 export default function SellerProductsPage() {
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [productDialog, setProductDialog] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [mode, setMode] = useState("add");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [deletecConfimation, setDeleteConfirmation] = useState(false);
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    isFetching: categoriesFetching,
+    isError: categoriesError,
+    error: categoriesErrorMessage,
+  } = useQuery({
+    queryKey: ["categories", { page, limit }],
+    enabled: true,
+    queryFn: () => getCategories({ page: 1, limit: 100 }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    isFetching: productsFetching,
+    isError: productsError,
+    error: productsErrorMessage,
+  } = useQuery({
+    queryKey: ["products", { page, limit }],
+    enabled: true,
+    queryFn: () => getProducts({ page, limit }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
 
-  const handleSelectAll = () => {
-    if (selectedProducts.length === filteredProducts.length) {
-      setSelectedProducts([]);
-    } else {
-      setSelectedProducts(filteredProducts.map((p) => p.id));
-    }
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteProduct(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["products"]);
+      toast.success("Product deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error while deleting product"
+      );
+    },
+  });
+
+  const handleDeleteProduct = async () => {
+    await toast.promise(deleteMutation.mutateAsync(selectedProduct._id), {
+      loading: "Deleting product...",
+      success: () => {
+        setSelectedProduct(null);
+        return "Product deleted successfully";
+      },
+      error: (error) => {
+        setSelectedProduct(null);
+        return error?.response?.data?.message || "Error while deleting product";
+      },
+    });
   };
 
-  const handleSelectProduct = (productId) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId));
-    } else {
-      setSelectedProducts([...selectedProducts, productId]);
-    }
-  };
+  const columns = [
+    {
+      accessorKey: "images",
+      header: "Image",
+      cell: (info) => (
+        <img
+          src={info.row.original.images[0] || "/placeholder.svg"}
+          alt={info.row.original.name}
+          className="h-10 w-10 rounded-md object-cover"
+        />
+      ),
+    },
+    {
+      accessorKey: "name",
+      header: "Product",
+      cell: (info) => <div className="font-medium">{info.getValue()}</div>,
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: (info) => info.row.original.category.name,
+    },
+    {
+      accessorKey: "price",
+      header: "Price",
+      cell: (info) => `$${info.getValue().toFixed(2)}`,
+    },
+    {
+      accessorKey: "stock",
+      header: "Stock",
+      cell: (info) => info.row.original.quantity,
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: (info) => (
+        <Badge
+          variant="outline"
+          className={
+            info.row.original.quantity > info.row.original.stockThreshold
+              ? "bg-green-50 text-green-700 border-green-200"
+              : info.row.original.quantity === 0
+              ? "bg-red-50 text-red-700 border-red-200"
+              : "bg-yellow-50 text-yellow-700 border-yellow-200"
+          }
+        >
+          {info.row.original.quantity > info.row.original.stockThreshold
+            ? "In Stock"
+            : info.row.original.quantity === 0
+            ? "Out of Stock"
+            : "Low Stock"}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "actions",
+      header: "Actions",
+      cell: (info) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                setMode("edit");
+                setSelectedProduct(info.row.original);
+                setProductDialog(true);
+              }}
+            >
+              <Edit className="h-4 w-4 mr-2" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <ChevronDown className="h-4 w-4 mr-2" /> View Details
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => {
+                setSelectedProduct(info.row.original);
+                setDeleteConfirmation(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
 
-  const isSelected = (productId) => selectedProducts.includes(productId);
+  if (categoriesLoading || categoriesFetching) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (categoriesError) {
+    toast.error(
+      categoriesErrorMessage?.response?.data?.message || "Error while fetching"
+    );
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching categories data</p>
+        <p>{categoriesErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (productsError) {
+    toast.error(
+      productsErrorMessage?.response?.data?.message || "Error while fetching"
+    );
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching products data</p>
+        <p>{productsErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
+      {productDialog && (
+        <ProductDialog
+          open={productDialog}
+          onOpenChange={setProductDialog}
+          categories={categories?.results}
+          mode={mode}
+          selectedProduct={selectedProduct}
+        />
+      )}
+      {deletecConfimation && (
+        <ConfirmationModal
+          open={deletecConfimation}
+          onOpenChange={setDeleteConfirmation}
+          title="Delete Product"
+          description="Are you sure you want to delete this product? This action cannot be undone."
+          onConfirm={handleDeleteProduct}
+        />
+      )}
+      <style>{noScrollbarStyle}</style>
+
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -168,13 +277,20 @@ export default function SellerProductsPage() {
               Manage your product inventory and listings.
             </p>
           </div>
-          <Button className="sm:w-auto">
+          <Button
+            className="sm:w-auto"
+            onClick={() => {
+              setMode("add");
+              setSelectedProduct(null);
+              setProductDialog(true);
+            }}
+          >
             <Plus className="h-4 w-4 mr-2" /> Add Product
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="md:col-span-1">
+        <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">
+          <Card className="2xl:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>Summary</CardTitle>
               <CardDescription>Quick overview of your products</CardDescription>
@@ -182,33 +298,42 @@ export default function SellerProductsPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Products</span>
-                <span className="font-medium">{products.length}</span>
+                <span className="font-medium">
+                  {productsData?.results?.length || 0}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">In Stock</span>
                 <span className="font-medium">
-                  {products.filter((p) => p.status === "In Stock").length}
+                  {productsData?.results?.filter((p) => p.quantity > 0).length}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Low Stock</span>
                 <span className="font-medium">
-                  {products.filter((p) => p.status === "Low Stock").length}
+                  {
+                    productsData?.results?.filter(
+                      (p) => p.quantity < p.stockThreshold
+                    ).length
+                  }
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Out of Stock</span>
                 <span className="font-medium">
-                  {products.filter((p) => p.status === "Out of Stock").length}
+                  {
+                    productsData?.results?.filter((p) => p.quantity === 0)
+                      .length
+                  }
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Value</span>
                 <span className="font-medium">
                   $
-                  {products
-                    .reduce(
-                      (sum, product) => sum + product.price * product.stock,
+                  {productsData?.results
+                    ?.reduce(
+                      (sum, product) => sum + product.price * product.quantity,
                       0
                     )
                     .toFixed(2)}
@@ -217,18 +342,10 @@ export default function SellerProductsPage() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-3">
+          <Card className="2xl:col-span-3">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle>Product Management</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Upload className="h-4 w-4 mr-2" /> Import
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" /> Export
-                  </Button>
-                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -261,127 +378,18 @@ export default function SellerProductsPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">
-                        <Checkbox
-                          checked={
-                            selectedProducts.length ===
-                              filteredProducts.length &&
-                            filteredProducts.length > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="w-[80px]">Image</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => (
-                      <motion.tr
-                        key={product.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="group"
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={isSelected(product.id)}
-                            onCheckedChange={() =>
-                              handleSelectProduct(product.id)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <img
-                            src={product.image || "/placeholder.svg"}
-                            alt={product.name}
-                            className="h-10 w-10 rounded-md object-cover"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {product.id}
-                          </div>
-                        </TableCell>
-                        <TableCell>{product.category}</TableCell>
-                        <TableCell>${product.price.toFixed(2)}</TableCell>
-                        <TableCell>{product.stock}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              product.status === "In Stock"
-                                ? "bg-green-50 text-green-700 border-green-200"
-                                : product.status === "Low Stock"
-                                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                                : "bg-red-50 text-red-700 border-red-200"
-                            }
-                          >
-                            {product.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <ChevronDown className="h-4 w-4 mr-2" /> View
-                                Details
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                    {filteredProducts.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-24 text-center">
-                          No products found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing <strong>{filteredProducts.length}</strong> of{" "}
-                  <strong>{products.length}</strong> products
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" disabled>
-                    Previous
-                  </Button>
-                  <Button variant="outline" size="sm" disabled>
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <CustomTable
+                data={productsData?.results || []}
+                columns={columns}
+                loading={productsLoading || productsFetching}
+                page={page}
+                limit={limit}
+                total={productsData?.count || 0}
+                onPageChange={setPage}
+                onPageSizeChange={setLimit}
+                editable={false}
+                pagination
+              />
             </CardContent>
           </Card>
         </div>
