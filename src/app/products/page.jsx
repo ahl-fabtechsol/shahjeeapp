@@ -13,12 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
+import { getCategories } from "@/services/categoryService";
 import { getAllProductsSite } from "@/services/productService";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./(components)/productCard";
 import ProductSkeleton from "./(components)/productSkeleton";
-import { getCategories } from "@/services/categoryService";
-import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 
 export default function ProductsPage() {
   const limit = 12;
@@ -27,9 +27,6 @@ export default function ProductsPage() {
     handleSearchChange,
     searchValue,
   } = useDebouncedSearch();
-  const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOption, setSortOption] = useState("featured");
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");

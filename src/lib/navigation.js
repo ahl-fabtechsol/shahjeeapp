@@ -104,6 +104,11 @@ const sellerRoutes = [
     icon: Package,
   },
   {
+    title: "Deals",
+    url: "/dashboard/seller/deals",
+    icon: ShoppingBag,
+  },
+  {
     title: "Orders",
     url: "/dashboard/seller/orders",
     icon: ShoppingCart,

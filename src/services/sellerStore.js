@@ -1,7 +1,7 @@
 import { api } from "./api";
-export const getSellerStores = ({ page, limit, seller }) =>
+export const getSellerStores = ({ page, limit, seller, search }) =>
   api
-    .get("/seller-store", { params: { page, limit, seller } })
+    .get("/seller-store", { params: { page, limit, seller, name: search } })
     .then((res) => res.data);
 
 export const getSellerStore = (id) =>

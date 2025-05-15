@@ -1,13 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Package,
-  Search,
-  Users,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,12 +9,10 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { getSellerStores } from "@/services/sellerStore";
 import { useQuery } from "@tanstack/react-query";
 
-export function Sellers() {
-  const [searchTerm, setSearchTerm] = useState("");
+export function Sellers({ search }) {
   const [page, setPage] = useState(1);
   const limit = 6;
 
@@ -31,8 +23,8 @@ export function Sellers() {
     error: sellersError,
     isError: isSellersError,
   } = useQuery({
-    queryKey: ["sellerStoresSite", { page, limit }],
-    queryFn: () => getSellerStores({ page, limit, seller: "" }),
+    queryKey: ["sellerStoresSite", { page, limit, search }],
+    queryFn: () => getSellerStores({ page, limit, seller: "", search }),
     staleTime: 1000 * 60 * 5,
     enabled: true,
   });
@@ -75,19 +67,6 @@ export function Sellers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 justify-between">
-        <div className="relative w-full md:w-1/3">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search sellers or categories..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         variants={container}

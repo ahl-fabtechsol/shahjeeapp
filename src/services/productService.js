@@ -1,7 +1,9 @@
 import { api } from "@/services/api";
 
-export const getProducts = ({ page, limit }) =>
-  api.get("/product", { params: { page, limit } }).then((res) => res.data);
+export const getProducts = ({ page, limit, search }) =>
+  api
+    .get("/product", { params: { page, limit, name: search } })
+    .then((res) => res.data);
 
 export const getProduct = (id) =>
   api.get(`/product/${id}`).then((res) => res.data);

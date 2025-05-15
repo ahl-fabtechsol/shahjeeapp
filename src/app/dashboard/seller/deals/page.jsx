@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   Edit,
-  Filter,
   Loader2,
   MoreHorizontal,
   Plus,
@@ -12,16 +11,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { CustomTable } from "@/components/customTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,19 +26,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { getCategories } from "@/services/categoryService";
-import { deleteProduct, getProducts } from "@/services/productService";
+  deleteDeal,
+  getDeals,
+  getProductsForDeals,
+} from "@/services/dealsService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ProductDialog } from "./(components)/productDialog";
-import { set } from "date-fns";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { DealsDialog } from "./(components)/dealsDialog";
 import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 
 const noScrollbarStyle = `
@@ -57,52 +45,53 @@ const noScrollbarStyle = `
   }
 `;
 
-export default function SellerProductsPage() {
+export default function SellerDealsPage() {
   const {
     delayedSearch: search,
     handleSearchChange,
     searchValue,
   } = useDebouncedSearch();
   const queryClient = useQueryClient();
-  const [productDialog, setProductDialog] = useState(false);
+  const [dealsDialog, setDealsDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [mode, setMode] = useState("add");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedDeal, seteSelectedDeal] = useState(null);
   const [deletecConfimation, setDeleteConfirmation] = useState(false);
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-    isFetching: categoriesFetching,
-    isError: categoriesError,
-    error: categoriesErrorMessage,
-  } = useQuery({
-    queryKey: ["categories", { page, limit }],
-    enabled: true,
-    queryFn: () => getCategories({ page: 1, limit: 100 }),
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
 
   const {
-    data: productsData,
+    data: productOptions,
     isLoading: productsLoading,
     isFetching: productsFetching,
     isError: productsError,
     error: productsErrorMessage,
   } = useQuery({
-    queryKey: ["products", { page, limit, search }],
-    enabled: true,
-    queryFn: () => getProducts({ page, limit, search: search }),
+    queryKey: ["productsOptions"],
+    queryFn: () => getProductsForDeals(),
     staleTime: 1000 * 60 * 5,
     retry: 1,
+    enabled: true,
+  });
+
+  const {
+    data: dealsData,
+    isLoading: dealsLoading,
+    isFetching: dealsFetching,
+    isError: dealsError,
+    error: dealsErrorMessage,
+  } = useQuery({
+    queryKey: ["deals", { page, limit, search }],
+    queryFn: () => getDeals({ page, limit, seller: "", search: search }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+    enabled: true,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => deleteProduct(id),
+    mutationFn: (id) => deleteDeal(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(["products"]);
-      toast.success("Product deleted successfully");
+      queryClient.invalidateQueries(["deals"]);
+      toast.success("Deal deleted successfully");
     },
     onError: (error) => {
       toast.error(
@@ -111,21 +100,26 @@ export default function SellerProductsPage() {
     },
   });
 
-  const handleDeleteProduct = async () => {
-    await toast.promise(deleteMutation.mutateAsync(selectedProduct._id), {
-      loading: "Deleting product...",
+  const hanleDeleteDeal = async () => {
+    await toast.promise(deleteMutation.mutateAsync(selectedDeal._id), {
+      loading: "Deleting Deal...",
       success: () => {
-        setSelectedProduct(null);
-        return "Product deleted successfully";
+        seteSelectedDeal(null);
+        return "Deal deleted successfully";
       },
       error: (error) => {
-        setSelectedProduct(null);
-        return error?.response?.data?.message || "Error while deleting product";
+        seteSelectedDeal(null);
+        return error?.response?.data?.message || "Error while deleting deal";
       },
     });
   };
 
   const columns = [
+    {
+      accessorKey: "dealCode",
+      header: "Name",
+      cell: (info) => <div className="font-medium">{info.getValue()}</div>,
+    },
     {
       accessorKey: "images",
       header: "Image",
@@ -138,24 +132,9 @@ export default function SellerProductsPage() {
       ),
     },
     {
-      accessorKey: "name",
-      header: "Product",
-      cell: (info) => <div className="font-medium">{info.getValue()}</div>,
-    },
-    {
-      accessorKey: "category",
-      header: "Category",
-      cell: (info) => info.row.original.category.name,
-    },
-    {
       accessorKey: "price",
       header: "Price",
       cell: (info) => `$${info.getValue().toFixed(2)}`,
-    },
-    {
-      accessorKey: "stock",
-      header: "Stock",
-      cell: (info) => info.row.original.quantity,
     },
     {
       accessorKey: "status",
@@ -164,18 +143,18 @@ export default function SellerProductsPage() {
         <Badge
           variant="outline"
           className={
-            info.row.original.quantity > info.row.original.stockThreshold
+            info.row.original.status === "A"
               ? "bg-green-50 text-green-700 border-green-200"
-              : info.row.original.quantity === 0
-              ? "bg-red-50 text-red-700 border-red-200"
-              : "bg-yellow-50 text-yellow-700 border-yellow-200"
+              : info.row.original.status === "IA"
+              ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+              : "bg-red-50 text-red-700 border-red-200"
           }
         >
-          {info.row.original.quantity > info.row.original.stockThreshold
-            ? "In Stock"
-            : info.row.original.quantity === 0
-            ? "Out of Stock"
-            : "Low Stock"}
+          {info.row.original.status === "A"
+            ? "Active"
+            : info.row.original.status === "IA"
+            ? "Inactive"
+            : "Suspended"}
         </Badge>
       ),
     },
@@ -195,8 +174,8 @@ export default function SellerProductsPage() {
             <DropdownMenuItem
               onClick={() => {
                 setMode("edit");
-                setSelectedProduct(info.row.original);
-                setProductDialog(true);
+                seteSelectedDeal(info.row.original);
+                setDealsDialog(true);
               }}
             >
               <Edit className="h-4 w-4 mr-2" /> Edit
@@ -208,7 +187,7 @@ export default function SellerProductsPage() {
             <DropdownMenuItem
               className="text-red-600"
               onClick={() => {
-                setSelectedProduct(info.row.original);
+                seteSelectedDeal(info.row.original);
                 setDeleteConfirmation(true);
               }}
             >
@@ -220,22 +199,10 @@ export default function SellerProductsPage() {
     },
   ];
 
-  if (categoriesLoading || categoriesFetching) {
+  if (productsLoading || productsFetching) {
     return (
       <div className="h-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (categoriesError) {
-    toast.error(
-      categoriesErrorMessage?.response?.data?.message || "Error while fetching"
-    );
-    return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <p className="text-red-500">Error fetching categories data</p>
-        <p>{categoriesErrorMessage?.response?.data?.message || "Error"}</p>
       </div>
     );
   }
@@ -246,21 +213,33 @@ export default function SellerProductsPage() {
     );
     return (
       <div className="h-full flex flex-col items-center justify-center">
-        <p className="text-red-500">Error fetching products data</p>
+        <p className="text-red-500">Error fetching categories data</p>
         <p>{productsErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (dealsError) {
+    toast.error(
+      dealsErrorMessage?.response?.data?.message || "Error while fetching"
+    );
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching products data</p>
+        <p>{dealsErrorMessage?.response?.data?.message || "Error"}</p>
       </div>
     );
   }
 
   return (
     <div className="p-4">
-      {productDialog && (
-        <ProductDialog
-          open={productDialog}
-          onOpenChange={setProductDialog}
-          categories={categories?.results}
+      {dealsDialog && (
+        <DealsDialog
+          open={dealsDialog}
+          onOpenChange={setDealsDialog}
+          products={productOptions?.results}
           mode={mode}
-          selectedProduct={selectedProduct}
+          selectedDeal={selectedDeal}
         />
       )}
       {deletecConfimation && (
@@ -269,7 +248,7 @@ export default function SellerProductsPage() {
           onOpenChange={setDeleteConfirmation}
           title="Delete Product"
           description="Are you sure you want to delete this product? This action cannot be undone."
-          onConfirm={handleDeleteProduct}
+          onConfirm={hanleDeleteDeal}
         />
       )}
       <style>{noScrollbarStyle}</style>
@@ -277,80 +256,28 @@ export default function SellerProductsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Deals</h1>
             <p className="text-muted-foreground">
-              Manage your product inventory and listings.
+              Manage your Deals and listings.
             </p>
           </div>
           <Button
             className="sm:w-auto"
             onClick={() => {
               setMode("add");
-              setSelectedProduct(null);
-              setProductDialog(true);
+              seteSelectedDeal(null);
+              setDealsDialog(true);
             }}
           >
-            <Plus className="h-4 w-4 mr-2" /> Add Product
+            <Plus className="h-4 w-4 mr-2" /> Add Deal
           </Button>
         </div>
 
         <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">
-          <Card className="2xl:col-span-1">
-            <CardHeader className="pb-3">
-              <CardTitle>Summary</CardTitle>
-              <CardDescription>Quick overview of your products</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Products</span>
-                <span className="font-medium">
-                  {productsData?.results?.length || 0}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">In Stock</span>
-                <span className="font-medium">
-                  {productsData?.results?.filter((p) => p.quantity > 0).length}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Low Stock</span>
-                <span className="font-medium">
-                  {
-                    productsData?.results?.filter(
-                      (p) => p.quantity < p.stockThreshold
-                    ).length
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Out of Stock</span>
-                <span className="font-medium">
-                  {
-                    productsData?.results?.filter((p) => p.quantity === 0)
-                      .length
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Value</span>
-                <span className="font-medium">
-                  $
-                  {productsData?.results
-                    ?.reduce(
-                      (sum, product) => sum + product.price * product.quantity,
-                      0
-                    )
-                    .toFixed(2)}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="2xl:col-span-3">
+          <Card className="2xl:col-span-4">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle>Product Management</CardTitle>
+                <CardTitle>Deals Management</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
@@ -359,7 +286,7 @@ export default function SellerProductsPage() {
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Search products..."
+                    placeholder="Search deals..."
                     className="pl-8"
                     value={searchValue}
                     onChange={(e) => handleSearchChange(e.target.value)}
@@ -368,12 +295,12 @@ export default function SellerProductsPage() {
               </div>
 
               <CustomTable
-                data={productsData?.results || []}
+                data={dealsData?.results || []}
                 columns={columns}
-                loading={productsLoading || productsFetching}
+                loading={dealsLoading || dealsFetching}
                 page={page}
                 limit={limit}
-                total={productsData?.count || 0}
+                total={dealsData?.count || 0}
                 onPageChange={setPage}
                 onPageSizeChange={setLimit}
                 editable={false}
