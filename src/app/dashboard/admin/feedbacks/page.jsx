@@ -8,6 +8,7 @@ import {
   Clock,
   Filter,
   Flag,
+  Loader2,
   MessageCircle,
   MessageSquare,
   MoreHorizontal,
@@ -47,6 +48,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  deleteFeedback,
+  getFeedbacks,
+  replyFeedback,
+} from "@/services/feedbackService";
+import { toast } from "sonner";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 // Sample feedback data
 const feedbacks = [
@@ -210,42 +219,80 @@ const feedbacks = [
 ];
 
 export default function AdminFeedbacksPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const queryClient = useQueryClient();
   const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [repliedText, setReplyText] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
 
-  const getFilteredFeedbacks = () => {
-    let filtered = feedbacks.filter(
-      (feedback) =>
-        feedback.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        feedback.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        feedback.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-    if (activeTab !== "all") {
-      filtered = filtered.filter((feedback) => {
-        if (activeTab === "product") return feedback.type === "Product Review";
-        if (activeTab === "seller") return feedback.type === "Seller Feedback";
-        if (activeTab === "platform")
-          return feedback.type === "Platform Feedback";
-        if (activeTab === "flagged") return feedback.flagged;
-        return true;
-      });
-    }
+  const {
+    data: feedbackData,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useQuery({
+    queryKey: ["feedbacks"],
+    queryFn: () => getFeedbacks({ page: 1, limit: 100000 }),
+    enabled: !!page,
+    retry: 1,
+  });
 
-    return filtered;
+  const mutation = useMutation({
+    mutationFn: (payload) => replyFeedback(selectedFeedback._id, payload),
+    onSuccess: (data) => {
+      toast.success("Reply sent successfully");
+      queryClient.invalidateQueries(["feedbacks"]);
+      setReplyText("");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Error while replying");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (feedbackId) => deleteFeedback(feedbackId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["feedbacks"]);
+      setDeleteConfirmation(false);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Error while deleting");
+    },
+  });
+
+  const handleDelete = () => {
+    toast.promise(deleteMutation.mutateAsync(selectedFeedback._id), {
+      loading: "Deleting feedback...",
+      success: "Feedback deleted successfully",
+      error: (error) =>
+        error?.response?.data?.message || "Error while deleting feedback",
+    });
+    setSelectedFeedback(null);
   };
 
-  const filteredFeedbacks = getFilteredFeedbacks();
+  const handleReply = () => {
+    const payload = {
+      repliedText,
+    };
+    toast.promise(mutation.mutateAsync(payload), {
+      loading: "Sending reply...",
+      success: "Reply sent successfully",
+      error: (error) =>
+        error?.response?.data?.message || "Error while sending reply",
+    });
+    setReplyText("");
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Published":
+      case "P":
         return "bg-green-50 text-green-700 border-green-200";
-      case "Under Review":
+      case "R":
         return "bg-blue-50 text-blue-700 border-blue-200";
-      case "Flagged":
-        return "bg-red-50 text-red-700 border-red-200";
+
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
     }
@@ -262,8 +309,35 @@ export default function AdminFeedbacksPage() {
     ));
   };
 
+  if (isLoading || isFetching) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    toast.error(error?.response?.data?.message || "Error while fetching");
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching feedbacks data</p>
+        <p>{error?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4">
+      {deleteConfirmation && (
+        <ConfirmationModal
+          title="Delete Feedback"
+          description="Are you sure you want to delete this feedback? This action cannot be undone."
+          open={deleteConfirmation}
+          onOpenChange={setDeleteConfirmation}
+          onConfirm={handleDelete}
+        />
+      )}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -275,24 +349,11 @@ export default function AdminFeedbacksPage() {
         </div>
 
         <div className="mt-4">
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search feedbacks..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
           <div className="mt-0">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredFeedbacks.map((feedback) => (
+              {feedbackData?.results?.map((feedback, index) => (
                 <motion.div
-                  key={feedback.id}
+                  key={index}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
@@ -305,9 +366,6 @@ export default function AdminFeedbacksPage() {
                           <div className="flex items-center gap-1 mb-1">
                             {renderStars(feedback.rating)}
                           </div>
-                          <CardTitle className="text-lg">
-                            {feedback.title}
-                          </CardTitle>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -318,17 +376,11 @@ export default function AdminFeedbacksPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <MessageCircle className="h-4 w-4 mr-2" /> Respond
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Check className="h-4 w-4 mr-2" /> Approve
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Flag className="h-4 w-4 mr-2" /> Flag
-                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeleteConfirmation(true)}
+                            >
                               <Trash className="h-4 w-4 mr-2" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -337,14 +389,13 @@ export default function AdminFeedbacksPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2 mb-2">
-                        <Badge variant="outline">{feedback.type}</Badge>
                         <Badge
                           variant="outline"
-                          className={getStatusColor(feedback.status)}
+                          className={getStatusColor(feedback?.status)}
                         >
-                          {feedback.status}
+                          {feedback.status === "P" ? "Pending" : "Replied"}
                         </Badge>
-                        {feedback.responded && (
+                        {feedback.replied && (
                           <Badge
                             variant="outline"
                             className="bg-green-50 text-green-700 border-green-200"
@@ -354,61 +405,38 @@ export default function AdminFeedbacksPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-3">
-                        {feedback.message}
+                        {feedback?.message}
                       </p>
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
                             <AvatarImage
-                              src={feedback.user.avatar || "/placeholder.svg"}
-                              alt={feedback.user.name}
+                              src={
+                                feedback?.createdByDetails?.image ||
+                                "/placeholder.svg"
+                              }
+                              alt={feedback?.createdByDetails?.name}
                             />
                             <AvatarFallback>
-                              {feedback.user.name.charAt(0)}
+                              {feedback?.createdByDetails?.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-sm font-medium">
-                            {feedback.user.name}
+                            {feedback?.createdByDetails?.name}
                           </span>
                         </div>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Clock className="h-3 w-3 mr-1" />
-                          <span>{feedback.date}</span>
+                          <span>
+                            {new Date(feedback?.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="pt-0">
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {feedback.helpful}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ThumbsDown className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {feedback.unhelpful}
-                            </span>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">
-                          View Details <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </CardFooter>
                   </Card>
                 </motion.div>
               ))}
             </div>
-
-            {filteredFeedbacks.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2" />
-                <p>No feedbacks found matching your criteria</p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -418,18 +446,17 @@ export default function AdminFeedbacksPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-1 mb-1">
-                    {renderStars(selectedFeedback.rating)}
+                    {renderStars(selectedFeedback?.rating)}
                   </div>
-                  <CardTitle>{selectedFeedback.title}</CardTitle>
                   <CardDescription>
-                    {selectedFeedback.type} • {selectedFeedback.date}
+                    {new Date(selectedFeedback?.createdAt).toLocaleDateString()}
                   </CardDescription>
                 </div>
                 <Badge
                   variant="outline"
                   className={getStatusColor(selectedFeedback.status)}
                 >
-                  {selectedFeedback.status}
+                  {selectedFeedback.status === "P" ? "Pending" : "Replied"}
                 </Badge>
               </div>
             </CardHeader>
@@ -437,19 +464,22 @@ export default function AdminFeedbacksPage() {
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage
-                    src={selectedFeedback.user.avatar || "/placeholder.svg"}
-                    alt={selectedFeedback.user.name}
+                    src={
+                      selectedFeedback.createdByDetails.image ||
+                      "/placeholder.svg"
+                    }
+                    alt={selectedFeedback.createdByDetails.name}
                   />
                   <AvatarFallback>
-                    {selectedFeedback.user.name.charAt(0)}
+                    {selectedFeedback.createdByDetails.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="font-medium">
-                    {selectedFeedback.user.name}
+                    {selectedFeedback.createdByDetails.name}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {selectedFeedback.user.email}
+                    {selectedFeedback.createdByDetails.email}
                   </div>
                 </div>
               </div>
@@ -461,46 +491,43 @@ export default function AdminFeedbacksPage() {
               {selectedFeedback.product && (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Product:</span>
-                  <span>{selectedFeedback.product}</span>
+                  <span>{selectedFeedback?.product?.name}</span>
                 </div>
               )}
 
-              {selectedFeedback.seller && (
+              {selectedFeedback.sellerDetails && (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Seller:</span>
-                  <span>{selectedFeedback.seller}</span>
+                  <span>{selectedFeedback.sellerDetails?.name}</span>
                 </div>
               )}
-
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {selectedFeedback.helpful} found helpful
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <ThumbsDown className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {selectedFeedback.unhelpful} found unhelpful
-                  </span>
-                </div>
-              </div>
 
               <div className="border-t pt-4">
                 <h3 className="font-medium mb-2">Response</h3>
                 <Textarea
                   placeholder="Write your response here..."
                   className="min-h-[100px]"
+                  value={repliedText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  disabled={
+                    deleteMutation.isLoading ||
+                    deleteMutation.isPending ||
+                    mutation.isLoading ||
+                    mutation.isPending
+                  }
                 />
               </div>
             </CardContent>
             <CardFooter className="flex justify-between flex-wrap gap-4">
               <div className="flex gap-2">
-                <Button variant="outline">
-                  <Flag className="h-4 w-4 mr-2" /> Flag
-                </Button>
                 <Button
+                  disabled={
+                    deleteMutation.isLoading ||
+                    deleteMutation.isPending ||
+                    mutation.isLoading ||
+                    mutation.isPending
+                  }
+                  onClick={() => setDeleteConfirmation(true)}
                   variant="outline"
                   className="text-red-600 hover:text-red-600"
                 >
@@ -509,79 +536,34 @@ export default function AdminFeedbacksPage() {
               </div>
               <div className="flex gap-2">
                 <Button
+                  disabled={
+                    !repliedText ||
+                    deleteMutation.isLoading ||
+                    deleteMutation.isPending ||
+                    mutation.isLoading ||
+                    mutation.isPending
+                  }
                   variant="outline"
                   onClick={() => setSelectedFeedback(null)}
                 >
                   Cancel
                 </Button>
-                <Button>
+                <Button
+                  onClick={handleReply}
+                  disabled={
+                    !repliedText ||
+                    deleteMutation.isLoading ||
+                    deleteMutation.isPending ||
+                    mutation.isLoading ||
+                    mutation.isPending
+                  }
+                >
                   <MessageCircle className="h-4 w-4 mr-2" /> Send Response
                 </Button>
               </div>
             </CardFooter>
           </Card>
         )}
-
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Feedback Analytics</h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Average Rating
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <div className="text-3xl font-bold">4.2</div>
-                  <div className="flex items-center ml-2">{renderStars(4)}</div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Based on 1,248 reviews
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Response Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">87%</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  +5% from last month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Flagged Content
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">12</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Requires moderation
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Pending Responses
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">24</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Awaiting reply
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
       </div>
     </div>
   );

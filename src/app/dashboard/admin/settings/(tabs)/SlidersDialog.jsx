@@ -12,8 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createCategory, updateCategory } from "@/services/categoryService";
 import { s3Uploader } from "@/services/s3Uploader";
+import { createSlider, updateSlider } from "@/services/slidersService";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-export default function CategoryDialog({ mode, category, open, onOpenChange }) {
+export default function SliderDialog({ mode, slider, open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [preview, setPreview] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -61,12 +61,12 @@ export default function CategoryDialog({ mode, category, open, onOpenChange }) {
   const mutation = useMutation({
     mutationFn: (values) => {
       return mode === "edit"
-        ? updateCategory(category?._id, values)
-        : createCategory(values);
+        ? updateSlider(slider?._id, values)
+        : createSlider(values);
     },
     onSuccess: () => {
       toast.success(mode === "edit" ? "Updated!" : "Created!");
-      queryClient.invalidateQueries(["categories"]);
+      queryClient.invalidateQueries(["sliders"]);
       onOpenChange(false);
     },
     onError: (err) => {
@@ -97,27 +97,27 @@ export default function CategoryDialog({ mode, category, open, onOpenChange }) {
       reset();
       setPreview("");
     }
-    if (category && (mode === "edit" || mode === "view")) {
+    if (slider && (mode === "edit" || mode === "view")) {
       reset({
-        name: category.name,
-        description: category.description || "",
+        name: slider.name,
+        description: slider.description || "",
         image: null,
       });
-      setPreview(category.image);
+      setPreview(slider.image);
     }
-  }, [open, category, mode, reset]);
+  }, [open, slider, mode, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {mode === "edit" ? "Edit Category" : "Add Category"}
+            {mode === "edit" ? "Edit Slider" : "Add Slider"}
           </DialogTitle>
           <DialogDescription>
             {mode === "edit"
-              ? "Update your category details."
-              : "Fill in to create a new category."}
+              ? "Update your Slider details."
+              : "Fill in to create a new Slider."}
           </DialogDescription>
         </DialogHeader>
 

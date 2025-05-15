@@ -15,10 +15,10 @@ export default function Home() {
     <MainLayout>
       <div className="flex flex-col gap-16 pb-16">
         <Hero />
-        <TrustedBy />
+        {/* <TrustedBy /> */}
         <Categories />
         <FeaturedProducts />
-        <Testimonials />
+        {/* <Testimonials /> */}
         {!loggedIn && <CallToAction />}
       </div>
     </MainLayout>

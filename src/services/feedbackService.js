@@ -19,3 +19,7 @@ export const deleteFeedback = (id) =>
 
 export const replyFeedback = (id, payload) =>
   api.post(`/feedback/reply/${id}`, payload).then((res) => res.data);
+
+
+export const featureFeedback = (id, payload) =>
+  api.post(`/feedback/feature/${id}`, payload).then((res) => res.data);

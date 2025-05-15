@@ -1,21 +1,10 @@
 "use client";
 
+import { MoreHorizontal, Package, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  ArrowUpDown,
-  Calendar,
-  Clock,
-  Download,
-  Eye,
-  Filter,
-  MoreHorizontal,
-  Package,
-  Search,
-  Trash2,
-  Truck,
-} from "lucide-react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { CustomTable } from "@/components/customTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,38 +14,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CustomTable } from "@/components/customTable";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { deleteOrder, getAllOrders } from "@/services/orderService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 export default function SellerOrdersPage() {
   const queryClient = useQueryClient();

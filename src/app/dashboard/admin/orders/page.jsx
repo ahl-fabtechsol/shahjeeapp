@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  AlertCircle,
-  Calendar,
-  Eye,
-  MoreHorizontal,
-  Search,
-} from "lucide-react";
+import { MoreHorizontal, Package, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { CustomTable } from "@/components/customTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,17 +22,115 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { OrderDetailDialog } from "./(components)/orderDetailDialog";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
+import { deleteOrder, getAllOrders } from "@/services/orderService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-const noScrollbarStyle = `
+export default function AdminOrdersPage() {
+  const queryClient = useQueryClient();
+  const {
+    delayedSearch: search,
+    handleSearchChange,
+    searchValue,
+  } = useDebouncedSearch();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [deletecConfimation, setDeleteConfirmation] = useState(false);
+
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    isFetching: ordersFetching,
+    isError: ordersError,
+    error: ordersErrorMessage,
+  } = useQuery({
+    queryKey: ["orders", page, limit, search],
+    queryFn: () => getAllOrders({ page, limit, search, seller: "" }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteOrder(id),
+    onSuccess: () => {
+      toast.success("Order deleted successfully");
+      queryClient.invalidateQueries(["orders"]);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error while deleting order"
+      );
+    },
+  });
+
+  const handleDeleteOrder = () => {
+    toast.promise(deleteMutation.mutateAsync(selectedOrder._id), {
+      loading: "Deleting order...",
+      success: "Order deleted successfully",
+      error: (error) =>
+        error?.response?.data?.message || "Error while deleting order",
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "D":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "S":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "P":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "C":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "D":
+        return "Delivered";
+      case "S":
+        return "Shipped";
+      case "P":
+        return "Pending";
+      case "C":
+        return "Cancelled";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getPaymentColor = (payment) => {
+    switch (payment) {
+      case "P":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "U":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "R":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getPaymentLabel = (payment) => {
+    switch (payment) {
+      case "P":
+        return "Paid";
+      case "U":
+        return "Unpaid";
+      case "R":
+        return "Refunded";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -48,324 +140,55 @@ const noScrollbarStyle = `
   }
 `;
 
-const orders = [
-  {
-    id: "ORD-7352",
-    customer: {
-      name: "Emma Wilson",
-      email: "emma.wilson@example.com",
-    },
-    seller: {
-      name: "TechGadgets",
-      id: "SLR-1001",
-    },
-    date: "2023-04-15",
-    status: "Delivered",
-    payment: "Paid",
-    total: 249.99,
-    items: 3,
-    disputed: false,
-  },
-  {
-    id: "ORD-7353",
-    customer: {
-      name: "James Rodriguez",
-      email: "james.r@example.com",
-    },
-    seller: {
-      name: "FashionHub",
-      id: "SLR-1002",
-    },
-    date: "2023-04-14",
-    status: "Processing",
-    payment: "Paid",
-    total: 129.99,
-    items: 1,
-    disputed: false,
-  },
-  {
-    id: "ORD-7354",
-    customer: {
-      name: "Sophia Chen",
-      email: "sophia.c@example.com",
-    },
-    seller: {
-      name: "HomeDecor",
-      id: "SLR-1003",
-    },
-    date: "2023-04-14",
-    status: "Shipped",
-    payment: "Paid",
-    total: 89.99,
-    items: 1,
-    disputed: false,
-  },
-  {
-    id: "ORD-7355",
-    customer: {
-      name: "Michael Brown",
-      email: "michael.b@example.com",
-    },
-    seller: {
-      name: "SportsGear",
-      id: "SLR-1004",
-    },
-    date: "2023-04-13",
-    status: "Pending",
-    payment: "Pending",
-    total: 159.98,
-    items: 2,
-    disputed: false,
-  },
-  {
-    id: "ORD-7356",
-    customer: {
-      name: "Olivia Johnson",
-      email: "olivia.j@example.com",
-    },
-    seller: {
-      name: "BeautyEssentials",
-      id: "SLR-1005",
-    },
-    date: "2023-04-12",
-    status: "Delivered",
-    payment: "Paid",
-    total: 299.97,
-    items: 3,
-    disputed: false,
-  },
-  {
-    id: "ORD-7357",
-    customer: {
-      name: "William Davis",
-      email: "william.d@example.com",
-    },
-    seller: {
-      name: "BookWorm",
-      id: "SLR-1006",
-    },
-    date: "2023-04-11",
-    status: "Cancelled",
-    payment: "Refunded",
-    total: 79.99,
-    items: 1,
-    disputed: true,
-  },
-  {
-    id: "ORD-7358",
-    customer: {
-      name: "Ava Martinez",
-      email: "ava.m@example.com",
-    },
-    seller: {
-      name: "KidsCorner",
-      id: "SLR-1007",
-    },
-    date: "2023-04-10",
-    status: "Delivered",
-    payment: "Paid",
-    total: 149.99,
-    items: 2,
-    disputed: false,
-  },
-  {
-    id: "ORD-7359",
-    customer: {
-      name: "Ethan Wilson",
-      email: "ethan.w@example.com",
-    },
-    seller: {
-      name: "TechGadgets",
-      id: "SLR-1001",
-    },
-    date: "2023-04-09",
-    status: "Delivered",
-    payment: "Paid",
-    total: 199.99,
-    items: 1,
-    disputed: true,
-  },
-];
-
-export default function AdminOrdersPage() {
-  const [selectedOrders, setSelectedOrders] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [showOrderDetail, setShowOrderDetail] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const getFilteredOrders = () => {
-    let filtered = orders.filter(
-      (order) =>
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.seller.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    if (activeTab !== "all") {
-      if (activeTab === "disputed") {
-        filtered = filtered.filter((order) => order.disputed);
-      } else {
-        filtered = filtered.filter(
-          (order) => order.status.toLowerCase() === activeTab.toLowerCase()
-        );
-      }
-    }
-
-    return filtered;
-  };
-
-  const filteredOrders = getFilteredOrders();
-
-  const handleSelectAll = () => {
-    if (selectedOrders.length === filteredOrders.length) {
-      setSelectedOrders([]);
-    } else {
-      setSelectedOrders(filteredOrders.map((o) => o.id));
-    }
-  };
-
-  const handleSelectOrder = (orderId) => {
-    if (selectedOrders.includes(orderId)) {
-      setSelectedOrders(selectedOrders.filter((id) => id !== orderId));
-    } else {
-      setSelectedOrders([...selectedOrders, orderId]);
-    }
-  };
-
-  const isSelected = (orderId) => selectedOrders.includes(orderId);
-
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case "delivered":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "shipped":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "processing":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "pending":
-        return "bg-orange-50 text-orange-700 border-orange-200";
-      case "cancelled":
-        return "bg-red-50 text-red-700 border-red-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
-  const getPaymentColor = (payment) => {
-    switch (payment.toLowerCase()) {
-      case "paid":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "pending":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "refunded":
-        return "bg-red-50 text-red-700 border-red-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
-  const tableColumns = [
+  const columns = [
     {
-      id: "select",
-      accessorKey: "id",
-      header: () => (
-        <Checkbox
-          checked={
-            selectedOrders.length === filteredOrders.length &&
-            filteredOrders.length > 0
-          }
-          onCheckedChange={handleSelectAll}
-        />
-      ),
-      cell: (info) => (
-        <Checkbox
-          checked={isSelected(info.row.original.id)}
-          onCheckedChange={() => handleSelectOrder(info.row.original.id)}
-        />
-      ),
+      accessorKey: "orderCode",
+      header: "Order Id",
+      cell: (info) => info.getValue("orderCode"),
     },
     {
-      id: "orderId",
-      accessorKey: "id",
-      header: () => <div className="flex items-center">Order ID</div>,
+      accessorKey: "customer",
+      header: "Customer",
       cell: (info) => (
-        <div className="flex items-center">
-          {info.getValue()}
-          {info.row.original.disputed && (
-            <AlertCircle
-              className="h-4 w-4 text-red-500 ml-2"
-              title="Disputed Order"
-            />
-          )}
-        </div>
-      ),
-    },
-    {
-      id: "customer",
-      accessorKey: "customer.name",
-      header: () => <div>Customer</div>,
-      cell: (info) => (
-        <div className="flex flex-col">
-          <div>{info.getValue()}</div>
-          <div className="text-xs text-muted-foreground hidden sm:block">
-            {info.row.original.customer.email}
+        <>
+          <div>{info.row.original.createdByDetails.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {info.row.original.createdByDetails.email}
           </div>
-        </div>
+        </>
       ),
     },
     {
-      id: "seller",
-      accessorKey: "seller.name",
-      header: () => <div>Seller</div>,
-      cell: (info) => <div>{info.getValue()}</div>,
+      accessorKey: "createdAt",
+      header: "Date",
+      cell: (info) => new Date(info.getValue()).toLocaleDateString(),
     },
     {
-      id: "date",
-      accessorKey: "date",
-      header: () => <div>Date</div>,
-      cell: (info) => (
-        <div className="hidden sm:flex items-center">
-          <Calendar className="h-4 w-4 mr-2" />
-          {info.getValue()}
-        </div>
-      ),
-    },
-    {
-      id: "status",
       accessorKey: "status",
-      header: () => <div>Status</div>,
+      header: "Status",
       cell: (info) => (
         <Badge variant="outline" className={getStatusColor(info.getValue())}>
-          {info.getValue()}
+          {getStatusLabel(info.getValue())}
         </Badge>
       ),
     },
     {
-      id: "payment",
-      accessorKey: "payment",
-      header: () => <div>Payment</div>,
+      accessorKey: "paymentStatus",
+      header: "Payment",
       cell: (info) => (
         <Badge variant="outline" className={getPaymentColor(info.getValue())}>
-          {info.getValue()}
+          {getPaymentLabel(info.getValue())}
         </Badge>
       ),
     },
     {
-      id: "total",
-      accessorKey: "total",
-      header: () => <div>Total</div>,
-      cell: (info) => (
-        <div className="flex flex-col">
-          <div>${info.getValue().toFixed(2)}</div>
-          <div className="text-xs text-muted-foreground hidden sm:block">
-            {info.row.original.items} items
-          </div>
-        </div>
-      ),
+      accessorKey: "totalAmount",
+      header: "Total",
+      cell: (info) => `$${info.getValue().toFixed(2)}`,
     },
     {
       id: "actions",
-      header: () => <div className="text-right">Actions</div>,
+      header: "Actions",
       cell: (info) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -376,13 +199,20 @@ export default function AdminOrdersPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            {/* <DropdownMenuItem>
+              <Eye className="h-4 w-4 mr-2" /> View Details
+            </DropdownMenuItem> */}
+            <DropdownMenuItem>
+              <Package className="h-4 w-4 mr-2" /> Update Status
+            </DropdownMenuItem>
             <DropdownMenuItem
+              className="text-red-600"
               onClick={() => {
                 setSelectedOrder(info.row.original);
-                setShowOrderDetail(true);
+                setDeleteConfirmation(true);
               }}
             >
-              <Eye className="h-4 w-4 mr-2" /> View Details
+              <Trash2 className="h-4 w-4 mr-2" /> Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -390,24 +220,37 @@ export default function AdminOrdersPage() {
     },
   ];
 
+  if (ordersError) {
+    toast.error(
+      ordersErrorMessage?.response?.data?.message || "Error while fetching"
+    );
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching products data</p>
+        <p>{ordersErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4">
-      {showOrderDetail && (
-        <OrderDetailDialog
-          order={selectedOrder}
-          open={showOrderDetail}
-          onOpenChange={setShowOrderDetail}
+      {deletecConfimation && (
+        <ConfirmationModal
+          open={deletecConfimation}
+          onOpenChange={setDeleteConfirmation}
+          title="Delete Order"
+          description="Are you sure you want to delete this Order? This action cannot be undone."
+          onConfirm={handleDeleteOrder}
         />
       )}
       <style>{noScrollbarStyle}</style>
+
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Order Management
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
             <p className="text-muted-foreground">
-              Monitor and manage orders across all sellers.
+              Manage and track customer orders.
             </p>
           </div>
         </div>
@@ -416,111 +259,56 @@ export default function AdminOrdersPage() {
           <Card className="2xl:col-span-1">
             <CardHeader className="pb-3">
               <CardTitle>Order Summary</CardTitle>
-              <CardDescription>Quick overview of all orders</CardDescription>
+              <CardDescription>Quick overview of your orders</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Orders</span>
-                  <span className="font-medium">{orders.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pending</span>
-                  <span className="font-medium">
-                    {orders.filter((o) => o.status === "Pending").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Processing</span>
-                  <span className="font-medium">
-                    {orders.filter((o) => o.status === "Processing").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipped</span>
-                  <span className="font-medium">
-                    {orders.filter((o) => o.status === "Shipped").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Delivered</span>
-                  <span className="font-medium">
-                    {orders.filter((o) => o.status === "Delivered").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cancelled</span>
-                  <span className="font-medium">
-                    {orders.filter((o) => o.status === "Cancelled").length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Disputed</span>
-                  <span className="font-medium">
-                    {orders.filter((o) => o.disputed).length}
-                  </span>
-                </div>
-                <div className="flex justify-between pt-2 border-t">
-                  <span className="text-muted-foreground">Total Revenue</span>
-                  <span className="font-medium">
-                    $
-                    {orders
-                      .reduce((sum, order) => sum + order.total, 0)
-                      .toFixed(2)}
-                  </span>
-                </div>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Orders</span>
+                <span className="font-medium">
+                  {ordersData?.results?.length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pending</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "P").length}
+                </span>
               </div>
 
-              <div>
-                <h3 className="text-sm font-medium mb-4">Order Status</h3>
-                <div className="space-y-4">
-                  {[
-                    "Delivered",
-                    "Shipped",
-                    "Processing",
-                    "Pending",
-                    "Cancelled",
-                  ].map((status) => {
-                    const count = orders.filter(
-                      (o) => o.status === status
-                    ).length;
-                    const percentage = (count / orders.length) * 100;
-                    return (
-                      <div key={status} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {status}
-                          </span>
-                          <span className="font-medium">
-                            {Math.round(percentage)}%
-                          </span>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipped</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "S").length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Delivered</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "D").length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Cancelled</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "C").length}
+                </span>
+              </div>
+              <div className="flex justify-between pt-2 border-t">
+                <span className="text-muted-foreground">Total Revenue</span>
+                <span className="font-medium">
+                  $
+                  {ordersData?.results
+                    .reduce((sum, order) => sum + order.totalAmount, 0)
+                    .toFixed(2)}
+                </span>
               </div>
             </CardContent>
           </Card>
 
           <Card className="2xl:col-span-3">
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-center gap-2">
+              <div className="flex items-center justify-between">
                 <CardTitle>Order Management</CardTitle>
-                <Select className="">
-                  <SelectTrigger className="">
-                    <SelectValue placeholder="Filter orders..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Orders</SelectItem>
-                    <SelectItem value="active">Pending</SelectItem>
-                    <SelectItem value="inactive">Processing</SelectItem>
-                    <SelectItem value="suspended">Delivered</SelectItem>
-                    <SelectItem value="unverified">Cancelled</SelectItem>
-                    <SelectItem value="unverified">Disputed</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardHeader>
             <CardContent>
@@ -531,18 +319,23 @@ export default function AdminOrdersPage() {
                     type="search"
                     placeholder="Search orders..."
                     className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchValue}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                   />
                 </div>
               </div>
 
               <CustomTable
-                columns={tableColumns}
-                data={orders}
+                data={ordersData?.results || []}
+                columns={columns}
+                loading={ordersLoading || ordersFetching}
+                page={page}
+                limit={limit}
+                total={ordersData?.count || 0}
+                onPageChange={setPage}
+                onPageSizeChange={setLimit}
                 editable={false}
-                pagination={true}
-                loading={false}
+                pagination
               />
             </CardContent>
           </Card>

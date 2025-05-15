@@ -1,19 +1,16 @@
 import {
-  Home,
-  Users,
-  Store,
-  ShoppingBag,
   AlertTriangle,
   BarChart2,
-  FileText,
-  Settings,
-  Lock,
-  ShoppingCart,
-  Package,
   Heart,
-  User,
-  Truck,
+  Home,
   MessageSquare,
+  Package,
+  Settings,
+  ShoppingBag,
+  ShoppingCart,
+  Store,
+  User,
+  Users,
 } from "lucide-react";
 
 const adminRoutes = [
@@ -33,16 +30,6 @@ const adminRoutes = [
     icon: ShoppingBag,
   },
   {
-    title: "Content Moderation",
-    url: "/dashboard/admin/moderation",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Analytics",
-    url: "/dashboard/admin/analytics",
-    icon: BarChart2,
-  },
-  {
     title: "System Settings",
     url: "/dashboard/admin/settings",
     icon: Settings,
@@ -51,6 +38,11 @@ const adminRoutes = [
     title: "Feedbacks",
     url: "/dashboard/admin/feedbacks",
     icon: MessageSquare,
+  },
+  {
+    title: "Profile",
+    url: "/dashboard/admin/profile",
+    icon: User,
   },
   {
     title: "Visit Site",
@@ -79,11 +71,6 @@ const buyerRoutes = [
     title: "Profile",
     url: "/dashboard/buyer/profile",
     icon: User,
-  },
-  {
-    title: "Settings",
-    url: "/dashboard/buyer/settings",
-    icon: Settings,
   },
   {
     title: "Visit Site",

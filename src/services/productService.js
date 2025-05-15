@@ -33,3 +33,6 @@ export const getAllProductsSite = ({
 
 export const getProductDetailSite = (id) =>
   api.get(`/product/site/${id}`).then((res) => res.data);
+
+export const featureProduct = (id, payload) =>
+  api.post(`/product/feature/${id}`, payload).then((res) => res.data);

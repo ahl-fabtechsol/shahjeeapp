@@ -2,13 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,30 +12,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { motion } from "framer-motion";
 import {
-  Edit,
   ImageIcon,
   Layers,
   LayoutDashboard,
-  MessageSquare,
-  Plus,
   ShoppingBag,
   Star,
-  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import CategoriesActionPage from "./(tabs)/CategoriesActionPage";
+import FeaturedProductsActionPage from "./(tabs)/FeaturedProductsActionPage";
+import SlidersActionPage from "./(tabs)/SlidersActionPage";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("sliders");
@@ -52,111 +34,6 @@ export default function AdminSettingsPage() {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
-
-  const sliders = [
-    {
-      id: 1,
-      title: "Summer Collection 2023",
-      description: "Discover our latest summer styles with up to 40% off",
-      image: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      title: "New Arrivals",
-      description: "Check out our newest products fresh from the designers",
-      image: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      title: "Limited Edition Items",
-      description: "Exclusive products available for a limited time only",
-      image: "/placeholder.svg",
-    },
-  ];
-
-  const products = [
-    {
-      id: 1,
-      name: "Premium Cotton T-Shirt",
-      price: "$29.99",
-      category: "Clothing",
-      featured: true,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      name: "Wireless Earbuds",
-      price: "$89.99",
-      category: "Electronics",
-      featured: true,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      name: "Leather Wallet",
-      price: "$49.99",
-      category: "Accessories",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 4,
-      name: "Smart Watch",
-      price: "$199.99",
-      category: "Electronics",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-  ];
-
-  const feedbacks = [
-    {
-      id: 1,
-      name: "John Doe",
-      rating: 5,
-      comment:
-        "Excellent service and high-quality products. Will definitely shop again!",
-      showOnLanding: true,
-      date: "2023-04-15",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      rating: 4,
-      comment:
-        "Fast shipping and good customer service. Very satisfied with my purchase.",
-      showOnLanding: true,
-      date: "2023-04-10",
-    },
-    {
-      id: 3,
-      name: "Robert Johnson",
-      rating: 5,
-      comment: "The product exceeded my expectations. Highly recommended!",
-      showOnLanding: false,
-      date: "2023-04-05",
-    },
-  ];
-
-  const handleAddEdit = (type, item = null) => {
-    setEditMode(!!item);
-    setCurrentItem(item);
-
-    switch (type) {
-      case "slider":
-        setSliderDialogOpen(true);
-        break;
-      case "product":
-        setProductDialogOpen(true);
-        break;
-      case "feedback":
-        setFeedbackDialogOpen(true);
-        break;
-      case "category":
-        setCategoryDialogOpen(true);
-        break;
-    }
-  };
 
   const handleSave = (type) => {
     switch (type) {
@@ -175,29 +52,6 @@ export default function AdminSettingsPage() {
     }
     setCurrentItem(null);
     setEditMode(false);
-  };
-
-  const toggleFeature = (type, id) => {
-    console.log(`Toggle ${type} with id ${id}`);
-  };
-
-  const handleDelete = (type, id) => {
-    console.log(`Delete ${type} with id ${id}`);
-  };
-
-  const containerAnimation = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemAnimation = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
   };
 
   return (
@@ -243,19 +97,7 @@ export default function AdminSettingsPage() {
               >
                 <ShoppingBag className="h-4 w-4 mr-2" /> Featured Products
               </TabsTrigger>
-              <TabsTrigger
-                value="feedback"
-                className="
-                flex-shrink-0
-                px-4 py-2
-                rounded-none
-                border-b-2 border-transparent
-                data-[state=active]:border-primary
-                data-[state=active]:bg-transparent
-              "
-              >
-                <MessageSquare className="h-4 w-4 mr-2" /> Feedback
-              </TabsTrigger>
+
               <TabsTrigger
                 value="categories"
                 className="
@@ -273,281 +115,11 @@ export default function AdminSettingsPage() {
           </div>
 
           <TabsContent value="sliders" className="mt-6">
-            <motion.div
-              variants={containerAnimation}
-              initial="hidden"
-              animate="show"
-            >
-              <Card>
-                <CardHeader className="flex flex-row gap-4 flex-wrap items-center justify-between">
-                  <div>
-                    <CardTitle>Slider Management</CardTitle>
-                    <CardDescription>
-                      Manage hero sliders that appear on your landing page
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => handleAddEdit("slider")}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Slider
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">Image</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          Description
-                        </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sliders.map((slider) => (
-                        <motion.tr
-                          key={slider.id}
-                          variants={itemAnimation}
-                          className="group"
-                        >
-                          <TableCell>
-                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                              <img
-                                src={slider.image || "/placeholder.svg"}
-                                alt={slider.title}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {slider.title}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-muted-foreground">
-                            {slider.description.length > 60
-                              ? `${slider.description.substring(0, 60)}...`
-                              : slider.description}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleAddEdit("slider", slider)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleDelete("slider", slider.id)
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </motion.tr>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <SlidersActionPage />
           </TabsContent>
 
           <TabsContent value="products" className="mt-6">
-            <motion.div
-              variants={containerAnimation}
-              initial="hidden"
-              animate="show"
-            >
-              <Card>
-                <CardHeader className="flex gap-4 flex-wrap  flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Featured Products</CardTitle>
-                    <CardDescription>
-                      Manage which products are featured on your landing page
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => handleAddEdit("product")}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Product
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">Image</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          Category
-                        </TableHead>
-                        <TableHead>Featured</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {products.map((product) => (
-                        <motion.tr
-                          key={product.id}
-                          variants={itemAnimation}
-                          className="group"
-                        >
-                          <TableCell>
-                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                              <img
-                                src={product.image || "/placeholder.svg"}
-                                alt={product.name}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {product.name}
-                          </TableCell>
-                          <TableCell>{product.price}</TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {product.category}
-                          </TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={product.featured}
-                              onCheckedChange={() =>
-                                toggleFeature("product", product.id)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleAddEdit("product", product)
-                                }
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleDelete("product", product.id)
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </motion.tr>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </TabsContent>
-
-          <TabsContent value="feedback" className="mt-6">
-            <motion.div
-              variants={containerAnimation}
-              initial="hidden"
-              animate="show"
-            >
-              <Card>
-                <CardHeader className="flex gap-4 flex-wrap flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Customer Feedback</CardTitle>
-                    <CardDescription>
-                      Manage testimonials displayed on your landing page
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => handleAddEdit("feedback")}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Feedback
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          Comment
-                        </TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Show</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {feedbacks.map((feedback) => (
-                        <motion.tr
-                          key={feedback.id}
-                          variants={itemAnimation}
-                          className="group"
-                        >
-                          <TableCell className="font-medium">
-                            {feedback.name}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < feedback.rating
-                                      ? "text-yellow-500 fill-yellow-500"
-                                      : "text-muted-foreground"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-muted-foreground">
-                            {feedback.comment.length > 40
-                              ? `${feedback.comment.substring(0, 40)}...`
-                              : feedback.comment}
-                          </TableCell>
-                          <TableCell>{feedback.date}</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={feedback.showOnLanding}
-                              onCheckedChange={() =>
-                                toggleFeature("feedback", feedback.id)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleAddEdit("feedback", feedback)
-                                }
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleDelete("feedback", feedback.id)
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </motion.tr>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <FeaturedProductsActionPage />
           </TabsContent>
 
           <TabsContent value="categories" className="mt-6">
