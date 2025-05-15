@@ -77,7 +77,7 @@ export default function DealsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4  sm:px-16 py-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -94,7 +94,7 @@ export default function DealsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search deals or sellers..."
+            placeholder="Search deals..."
             className="pl-10"
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}

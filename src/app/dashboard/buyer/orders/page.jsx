@@ -1,9 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Package, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { CustomTable } from "@/components/customTable";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -12,257 +14,269 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
+import { getAllOrders } from "@/services/orderService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function BuyerOrdersPage() {
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+  const {
+    delayedSearch: search,
+    handleSearchChange,
+    searchValue,
+  } = useDebouncedSearch();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [deletecConfimation, setDeleteConfirmation] = useState(false);
+
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    isFetching: ordersFetching,
+    isError: ordersError,
+    error: ordersErrorMessage,
+  } = useQuery({
+    queryKey: ["orders", page, limit, search],
+    queryFn: () => getAllOrders({ page, limit, search, seller: "" }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "D":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "S":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "P":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "C":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "D":
+        return "Delivered";
+      case "S":
+        return "Shipped";
+      case "P":
+        return "Pending";
+      case "C":
+        return "Cancelled";
+      default:
+        return "Unknown";
+    }
   };
+
+  const getPaymentColor = (payment) => {
+    switch (payment) {
+      case "P":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "U":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "R":
+        return "bg-red-50 text-red-700 border-red-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getPaymentLabel = (payment) => {
+    switch (payment) {
+      case "P":
+        return "Paid";
+      case "U":
+        return "Unpaid";
+      case "R":
+        return "Refunded";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const noScrollbarStyle = `
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+`;
+
+  const columns = [
+    {
+      accessorKey: "orderCode",
+      header: "Order Id",
+      cell: (info) => info.getValue("orderCode"),
+    },
+    {
+      accessorKey: "customer",
+      header: "Customer",
+      cell: (info) => (
+        <>
+          <div>{info.row.original.createdByDetails.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {info.row.original.createdByDetails.email}
+          </div>
+        </>
+      ),
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Date",
+      cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: (info) => (
+        <Badge variant="outline" className={getStatusColor(info.getValue())}>
+          {getStatusLabel(info.getValue())}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "paymentStatus",
+      header: "Payment",
+      cell: (info) => (
+        <Badge variant="outline" className={getPaymentColor(info.getValue())}>
+          {getPaymentLabel(info.getValue())}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "totalAmount",
+      header: "Total",
+      cell: (info) => `$${info.getValue().toFixed(2)}`,
+    },
+  ];
+
+  if (ordersError) {
+    toast.error(
+      ordersErrorMessage?.response?.data?.message || "Error while fetching"
+    );
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching products data</p>
+        <p>{ordersErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="p-4"
-    >
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Orders</h2>
-        <div className="flex items-center space-x-2">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search orders..."
-              className="w-full pl-8 md:w-64"
-            />
+    <div className="p-4">
+      {deletecConfimation && (
+        <ConfirmationModal
+          open={deletecConfimation}
+          onOpenChange={setDeleteConfirmation}
+          title="Delete Order"
+          description="Are you sure you want to delete this Order? This action cannot be undone."
+          onConfirm={handleDeleteOrder}
+        />
+      )}
+      <style>{noScrollbarStyle}</style>
+
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+            <p className="text-muted-foreground">
+              Manage and track customer orders.
+            </p>
           </div>
         </div>
+
+        <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">
+          <Card className="2xl:col-span-1">
+            <CardHeader className="pb-3">
+              <CardTitle>Order Summary</CardTitle>
+              <CardDescription>Quick overview of your orders</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Orders</span>
+                <span className="font-medium">
+                  {ordersData?.results?.length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pending</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "P").length}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Shipped</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "S").length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Delivered</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "D").length}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Cancelled</span>
+                <span className="font-medium">
+                  {ordersData?.results?.filter((o) => o.status === "C").length}
+                </span>
+              </div>
+              <div className="flex justify-between pt-2 border-t">
+                <span className="text-muted-foreground">Total Revenue</span>
+                <span className="font-medium">
+                  $
+                  {ordersData?.results
+                    .reduce((sum, order) => sum + order.totalAmount, 0)
+                    .toFixed(2)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="2xl:col-span-3">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Order Management</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search orders..."
+                    className="pl-8"
+                    value={searchValue}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <CustomTable
+                data={ordersData?.results || []}
+                columns={columns}
+                loading={ordersLoading || ordersFetching}
+                page={page}
+                limit={limit}
+                total={ordersData?.count || 0}
+                onPageChange={setPage}
+                onPageSizeChange={setLimit}
+                editable={false}
+                pagination
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className=" justify-start border-b rounded-none bg-transparent h-auto p-0">
-          <TabsTrigger
-            value="all"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            All Orders
-          </TabsTrigger>
-          <TabsTrigger
-            value="processing"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Processing
-          </TabsTrigger>
-          <TabsTrigger
-            value="shipped"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Shipped
-          </TabsTrigger>
-          <TabsTrigger
-            value="delivered"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Delivered
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="space-y-4">
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid gap-4"
-          >
-            {orders.map((order, index) => (
-              <motion.div key={order.id} variants={item}>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg">
-                          Order #{order.id}
-                        </CardTitle>
-                        <CardDescription>{order.date}</CardDescription>
-                      </div>
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {order.items.map((item, itemIndex) => (
-                        <motion.div
-                          key={itemIndex}
-                          whileHover={{ scale: 1.01 }}
-                          className="flex items-center space-x-4 rounded-md border p-4"
-                        >
-                          <div className="flex-shrink-0 rounded-md bg-muted p-2">
-                            <Package className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Qty: {item.quantity}
-                            </p>
-                          </div>
-                          <div className="font-medium">
-                            ${item.price.toFixed(2)}
-                          </div>
-                        </motion.div>
-                      ))}
-                      <div className="flex justify-between pt-4 border-t">
-                        <div>
-                          <p className="text-sm font-medium">Total</p>
-                          <p className="text-sm text-muted-foreground">
-                            Including shipping and taxes
-                          </p>
-                        </div>
-                        <div className="text-xl font-bold">
-                          ${order.total.toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline">Track Order</Button>
-                        <Button>View Details</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="processing" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Processing Orders</CardTitle>
-              <CardDescription>
-                Orders that are currently being processed.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Filtered processing orders will appear here.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="shipped" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Shipped Orders</CardTitle>
-              <CardDescription>Orders that have been shipped.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Filtered shipped orders will appear here.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="delivered" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Delivered Orders</CardTitle>
-              <CardDescription>
-                Orders that have been delivered.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Filtered delivered orders will appear here.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </motion.div>
+    </div>
   );
 }
-
-function getStatusColor(status) {
-  switch (status) {
-    case "Processing":
-      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/10";
-    case "Shipped":
-      return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/10";
-    case "Delivered":
-      return "bg-green-500/10 text-green-500 hover:bg-green-500/10";
-    case "Cancelled":
-      return "bg-red-500/10 text-red-500 hover:bg-red-500/10";
-    default:
-      return "";
-  }
-}
-
-const orders = [
-  {
-    id: "ORD-7652",
-    date: "May 2, 2023",
-    status: "Processing",
-    total: 149.99,
-    items: [
-      {
-        name: "Premium Headphones",
-        quantity: 1,
-        price: 149.99,
-      },
-    ],
-  },
-  {
-    id: "ORD-7651",
-    date: "April 28, 2023",
-    status: "Shipped",
-    total: 329.98,
-    items: [
-      {
-        name: "Smart Watch Series 5",
-        quantity: 1,
-        price: 299.99,
-      },
-      {
-        name: "Watch Charging Cable",
-        quantity: 1,
-        price: 29.99,
-      },
-    ],
-  },
-  {
-    id: "ORD-7650",
-    date: "April 15, 2023",
-    status: "Delivered",
-    total: 29.99,
-    items: [
-      {
-        name: "Laptop Sleeve Case",
-        quantity: 1,
-        price: 29.99,
-      },
-    ],
-  },
-  {
-    id: "ORD-7649",
-    date: "March 22, 2023",
-    status: "Delivered",
-    total: 49.99,
-    items: [
-      {
-        name: "Wireless Charger",
-        quantity: 1,
-        price: 49.99,
-      },
-    ],
-  },
-];

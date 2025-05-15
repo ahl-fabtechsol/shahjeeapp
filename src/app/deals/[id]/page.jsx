@@ -1,24 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowRight,
-  ChevronLeft,
-  Heart,
-  Share2,
-  ShoppingCart,
-} from "lucide-react";
+import { ArrowRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getDeals, getDealsForSiteById } from "@/services/dealsService";
-import { useQuery } from "@tanstack/react-query";
 import {
   Carousel,
   CarouselContent,
@@ -26,186 +17,19 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-const mockDeals = [
-  {
-    id: "1",
-    title: "Premium Wireless Headphones",
-    description:
-      "Experience crystal-clear sound with our Premium Wireless Headphones. These headphones feature active noise cancellation technology that blocks out external noise, allowing you to immerse yourself in your music or podcasts without distractions. With a battery life of up to 40 hours, you can enjoy your audio content for days without needing to recharge.",
-    images: [
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-    ],
-    price: 129.99,
-    originalPrice: 199.99,
-    discount: 35,
-    rating: 4.7,
-    reviewCount: 128,
-    stock: 42,
-    seller: {
-      id: "seller1",
-      name: "AudioTech Pro",
-      avatar: "/placeholder.svg?height=80&width=80",
-      rating: 4.8,
-      productCount: 24,
-    },
-    features: [
-      "Active Noise Cancellation",
-      "40-hour battery life",
-      "Bluetooth 5.0 connectivity",
-      "Built-in microphone for calls",
-      "Foldable design for easy storage",
-      "Premium comfort ear cushions",
-    ],
-    specifications: {
-      Brand: "AudioTech",
-      Model: "Pro X-500",
-      Color: "Matte Black",
-      Connectivity: "Bluetooth 5.0",
-      "Battery Life": "Up to 40 hours",
-      "Charging Time": "2 hours",
-      Weight: "250g",
-    },
-    dealEnds: "2023-12-31T23:59:59",
-    relatedDeals: [2, 4, 6],
-  },
-  {
-    id: "2",
-    title: "Smart Home Security System",
-    description:
-      "Protect your home with our comprehensive Smart Home Security System. This advanced system includes door/window sensors, motion detectors, and HD cameras that can be monitored from your smartphone. The AI-powered monitoring system can distinguish between normal household activities and potential security threats, reducing false alarms while ensuring your home remains secure.",
-    images: [
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-    ],
-    price: 249.99,
-    originalPrice: 349.99,
-    discount: 28,
-    rating: 4.5,
-    reviewCount: 86,
-    stock: 15,
-    seller: {
-      id: "seller2",
-      name: "SecureHome",
-      avatar: "/placeholder.svg?height=80&width=80",
-      rating: 4.6,
-      productCount: 18,
-    },
-    features: [
-      "AI-powered monitoring",
-      "HD security cameras",
-      "Door/window sensors",
-      "Motion detectors",
-      "Smartphone app control",
-      "24/7 monitoring option",
-    ],
-    specifications: {
-      Brand: "SecureHome",
-      Model: "Guardian Pro",
-      Components: "Base Station, 2 Cameras, 4 Sensors",
-      Connectivity: "Wi-Fi, Cellular Backup",
-      Power: "Wired with battery backup",
-      Storage: "Cloud + Local",
-    },
-    dealEnds: "2023-12-25T23:59:59",
-    relatedDeals: [1, 4, 5],
-  },
-  {
-    id: "4",
-    title: 'Ultra HD Smart TV - 55"',
-    description:
-      "Transform your home entertainment with our Ultra HD Smart TV. This 55-inch television delivers stunning 4K resolution with HDR support, bringing your favorite movies, shows, and games to life with vibrant colors and incredible detail. The built-in smart platform gives you access to all your favorite streaming services, while the voice control feature allows you to search for content, adjust volume, and more using just your voice.",
-    images: [
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600",
-    ],
-    price: 499.99,
-    originalPrice: 699.99,
-    discount: 28,
-    rating: 4.8,
-    reviewCount: 215,
-    stock: 8,
-    seller: {
-      id: "seller4",
-      name: "ElectroVision",
-      avatar: "/placeholder.svg?height=80&width=80",
-      rating: 4.9,
-      productCount: 42,
-    },
-    features: [
-      "4K Ultra HD Resolution",
-      "HDR Support",
-      "Smart TV Platform",
-      "Voice Control",
-      "Multiple HDMI and USB ports",
-      "Slim Bezel Design",
-    ],
-    specifications: {
-      Brand: "ElectroVision",
-      Model: "EV-55UHD",
-      "Screen Size": "55 inches",
-      Resolution: "3840 x 2160 (4K)",
-      "Refresh Rate": "120Hz",
-      Connectivity: "Wi-Fi, Bluetooth, HDMI x4, USB x3",
-      Audio: "20W Dolby Digital",
-    },
-    dealEnds: "2023-12-20T23:59:59",
-    relatedDeals: [1, 2, 6],
-  },
-];
-
-const mockRelatedDeals = [
-  {
-    id: "2",
-    title: "Smart Home Security System",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 249.99,
-    originalPrice: 349.99,
-    discount: 28,
-    seller: {
-      name: "SecureHome",
-    },
-  },
-  {
-    id: "4",
-    title: 'Ultra HD Smart TV - 55"',
-    image: "/placeholder.svg?height=300&width=300",
-    price: 499.99,
-    originalPrice: 699.99,
-    discount: 28,
-    seller: {
-      name: "ElectroVision",
-    },
-  },
-  {
-    id: "6",
-    title: "Fitness Smartwatch",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 149.99,
-    originalPrice: 199.99,
-    discount: 25,
-    seller: {
-      name: "FitTech",
-    },
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { getDeals, getDealsForSiteById } from "@/services/dealsService";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { createOrder } from "@/services/orderService";
+import { toast } from "sonner";
 
 export default function DealDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { id } = params;
-
-  const [deal, setDeal] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [relatedDeals, setRelatedDeals] = useState([]);
-  const [quantity, setQuantity] = useState(1);
+  const [confirmationModal, setConfirmationModal] = useState(false);
 
   const {
     data: dealData,
@@ -241,21 +65,38 @@ export default function DealDetailPage() {
     retry: 1,
   });
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const foundDeal = mockDeals.find((d) => d.id === id);
-      if (foundDeal) {
-        setDeal(foundDeal);
-        setRelatedDeals(mockRelatedDeals);
-      }
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [id]);
+  const mutation = useMutation({
+    mutationFn: (data) => createOrder(data),
+    onSuccess: (data) => {
+      toast.success("Order created successfully");
+      window.location.href = data.url;
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to create order");
+      console.error("Error creating order:", error);
+    },
+  });
 
   const handleGoBack = () => {
     router.back();
+  };
+
+  const handleBuy = async () => {
+    const products = dealData?.products?.map((item) => ({
+      product: item._id,
+      quantity: 1,
+    }));
+    const seller = dealData?.createdBy;
+    const totalAmount = dealData?.price;
+    const itemCount = dealData?.products?.reduce((acc, item) => acc + 1, 0);
+
+    const data = {
+      products,
+      seller,
+      totalAmount,
+      itemCount,
+    };
+    mutation.mutate(data);
   };
 
   if (dealError) {
@@ -340,7 +181,16 @@ export default function DealDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 sm:px-16 py-8">
+      {confirmationModal && (
+        <ConfirmationModal
+          title="Are you sure you want to buy this deal ?"
+          description="You will be redirected to a payemnt page"
+          open={confirmationModal}
+          onOpenChange={setConfirmationModal}
+          onConfirm={handleBuy}
+        />
+      )}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -469,39 +319,24 @@ export default function DealDetailPage() {
             <p className="text-muted-foreground">{dealData?.description}</p>
 
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                >
-                  -
-                </Button>
-                <span className="w-12 text-center">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(Math.min(99, quantity + 1))}
-                >
-                  +
-                </Button>
-              </div>
-
-              <Button className="flex-1" size="lg">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Add to Cart
+              <Button
+                className="flex-1"
+                size="lg"
+                disabled={mutation.isLoading || mutation.isPending}
+                onClick={() => setConfirmationModal(true)}
+              >
+                {mutation.isLoading || mutation.isPending ? (
+                  <span className="flex items-center justify-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing…
+                  </span>
+                ) : (
+                  <span className="flex item-center gap-2">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Buy
+                  </span>
+                )}
               </Button>
-
-              <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon">
-                  <Heart className="h-5 w-5" />
-                </Button>
-
-                <Button variant="outline" size="icon">
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
             </div>
           </motion.div>
         </div>

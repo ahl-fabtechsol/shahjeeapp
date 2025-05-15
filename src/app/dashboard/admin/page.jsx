@@ -1,144 +1,177 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowUp,
   DollarSign,
-  Users,
+  Package,
+  ShoppingCart,
+  Star,
   Store,
-  ShoppingBagIcon,
+  Users,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Bar,
-  BarChart,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { RecentUsers } from "./(tabs)/recentUsers";
-import { RecentOrders } from "./(tabs)/recentOrders";
-import { RecentSellers } from "./(tabs)/recentSellers";
-import { RecentBuyers } from "./(tabs)/recentBuyers";
-import { CustomTabs } from "@/components/customTabs";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { getAdminDashboardData } from "@/services/dashboardService";
+import { useQuery } from "@tanstack/react-query";
 
-const revenueData = [
-  { name: "Jan", total: 18000 },
-  { name: "Feb", total: 22000 },
-  { name: "Mar", total: 32000 },
-  { name: "Apr", total: 28000 },
-  { name: "May", total: 35000 },
-  { name: "Jun", total: 42000 },
-  { name: "Jul", total: 38000 },
-  { name: "Aug", total: 45000 },
-  { name: "Sep", total: 48000 },
-  { name: "Oct", total: 52000 },
-  { name: "Nov", total: 58000 },
-  { name: "Dec", total: 65000 },
-];
-
-const userActivityData = [
-  { name: "Mon", users: 520, sellers: 120 },
-  { name: "Tue", users: 580, sellers: 130 },
-  { name: "Wed", users: 650, sellers: 140 },
-  { name: "Thu", users: 590, sellers: 135 },
-  { name: "Fri", users: 620, sellers: 150 },
-  { name: "Sat", users: 700, sellers: 160 },
-  { name: "Sun", users: 680, sellers: 155 },
-];
-
-export default function AdminDashboard() {
-  const [timeRange, setTimeRange] = useState("7d");
-  const [currentTab, setCurrentTab] = useState("users");
-
-  const tabData = [
-    { value: "users", label: "Recent Users", content: <RecentUsers /> },
-    { value: "orders", label: "Recent Orders", content: <RecentOrders /> },
-    {
-      value: "sellers",
-      label: "Recent Sellers",
-      content: <RecentSellers />,
+export default function AdminDashboardPage() {
+  const {
+    data: dashboardData,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useQuery({
+    queryKey: ["adminDashboardData"],
+    queryFn: () => getAdminDashboardData(),
+    enabled: true,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
     },
-    { value: "buyers", label: "Recent Buyers", content: <RecentBuyers /> },
-  ];
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  };
+
+  const data = dashboardData;
+
+  const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
+  const formatDate = (date) => new Date(date).toLocaleDateString();
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "P":
+        return <Badge variant="default">Pending</Badge>;
+      case "U":
+        return <Badge variant="secondary">Unpaid</Badge>;
+      case "A":
+        return <Badge variant="success">Active</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getRoleBadge = (role) => {
+    switch (role) {
+      case "B":
+        return <Badge variant="default">Buyer</Badge>;
+      case "S":
+        return <Badge variant="secondary">Seller</Badge>;
+      default:
+        return <Badge>{role}</Badge>;
+    }
+  };
+
+  if (isError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching product data</p>
+        <p>{error?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="h-full mt-5 flex justify-center items-center">
+        <div className="flex justify-center items-center">
+          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
-          <p className="text-muted-foreground">
-            Overview of your platform's performance and activity
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="24h">Last 24 hours</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="1y">Last year</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="p-6 bg-white min-h-screen">
+      <div className="flex flex-col gap-4 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Comprehensive overview of platform performance and user activity.
+        </p>
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6"
       >
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <motion.div variants={item}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12,845</div>
-
-              <div className="mt-4 h-1 w-full bg-gray-200 dark:bg-gray-700">
-                <div
-                  className="h-1 bg-green-500"
-                  style={{ width: "100%" }}
-                ></div>
-              </div>
+              <div className="text-2xl font-bold">{data.totalUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                {data.totalBuyers} buyers, {data.totalSellers} sellers
+              </p>
             </CardContent>
           </Card>
+        </motion.div>
+
+        <motion.div variants={item}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Active Sellers
+                Total Stores
               </CardTitle>
               <Store className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2,456</div>
-
-              <div className="mt-4 h-1 w-full bg-gray-200 dark:bg-gray-700">
-                <div
-                  className="h-1 bg-blue-500"
-                  style={{ width: "100%" }}
-                ></div>
-              </div>
+              <div className="text-2xl font-bold">{data.totalStores}</div>
+              <p className="text-xs text-muted-foreground">
+                {data.totalCategories} categories
+              </p>
             </CardContent>
           </Card>
+        </motion.div>
+
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Orders
+              </CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">
+                {data.activeOrders} active
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={item}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -147,126 +180,269 @@ export default function AdminDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$845,238</div>
-
-              <div className="mt-4 h-1 w-full bg-gray-200 dark:bg-gray-700">
-                <div
-                  className="h-1 bg-green-500"
-                  style={{ width: "100%" }}
-                ></div>
+              <div className="text-2xl font-bold">
+                {formatCurrency(data.totalAmount)}
               </div>
+              <p className="text-xs text-muted-foreground">
+                {formatCurrency(data.totalPaidAmount)} paid
+              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Products
-              </CardTitle>
-              <ShoppingBagIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">238</div>
+        </motion.div>
+      </motion.div>
 
-              <div className="mt-4 h-1 w-full bg-gray-200 dark:bg-gray-700">
-                <div
-                  className="h-1 bg-green-500"
-                  style={{ width: "100%" }}
-                ></div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-8">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Platform Statistics</CardTitle>
+            <CardDescription>
+              Key metrics for orders and products
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Active Orders</span>
+                  <span className="font-medium">{data.activeOrders}</span>
+                </div>
+                <Progress
+                  value={(data.activeOrders / data.totalOrders) * 100}
+                  className="h-2"
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </motion.div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Paid Orders</span>
+                  <span className="font-medium">{data.paidOrders}</span>
+                </div>
+                <Progress
+                  value={(data.paidOrders / data.totalOrders) * 100}
+                  className="h-2"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Active Products</span>
+                  <span className="font-medium">{data.activeProducts}</span>
+                </div>
+                <Progress
+                  value={(data.activeProducts / data.totalProducts) * 100}
+                  className="h-2"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <div className="grid gap-4 grid-cols-1 xl:grid-cols-7">
-          <Card className="col-span-1 xl:col-span-4">
-            <CardHeader>
-              <CardTitle>Revenue Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={revenueData}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
-                  />
-                  <Tooltip />
-                  <Bar
-                    dataKey="total"
-                    fill="currentColor"
-                    radius={[4, 4, 0, 0]}
-                    className="fill-primary"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          <Card className="col-span-1 xl:col-span-3">
-            <CardHeader>
-              <CardTitle>User Activity</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={userActivityData}>
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="users"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="sellers"
-                    stroke="#82ca9d"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-      </motion.div>
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Recent Feedback</CardTitle>
+            <CardDescription>Latest user reviews</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.recentFeedbacks.map((feedback, index) => (
+                <motion.div
+                  key={feedback._id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + index * 0.1 }}
+                  className="flex flex-col space-y-1"
+                >
+                  <div className="flex justify-between">
+                    <span className="font-medium">User Feedback</span>
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < feedback.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm">{feedback.message}</p>
+                  {feedback.replied && (
+                    <p className="text-sm text-muted-foreground">
+                      Replied: {feedback.repliedText}
+                    </p>
+                  )}
+                  {index < data.recentFeedbacks.length - 1 && (
+                    <div className="border-t my-2" />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <CustomTabs
-          tabs={tabData}
-          value={currentTab}
-          onValueChange={setCurrentTab}
-        />
-      </motion.div>
+      <div className="mt-6">
+        <Tabs defaultValue="orders" className="space-y-4">
+          <div className="w-full overflow-x-auto hide-scrollbar">
+            <TabsList className="w-full flex flex-nowrap min-w-max justify-start border-b bg-transparent p-0">
+              <TabsTrigger
+                className="
+                flex-shrink-0
+                px-4 py-2
+                rounded-none
+                border-b-2 border-transparent
+                data-[state=active]:border-primary
+                data-[state=active]:bg-transparent
+              "
+                value="orders"
+              >
+                Recent Orders
+              </TabsTrigger>
+              <TabsTrigger
+                className="
+                flex-shrink-0
+                px-4 py-2
+                rounded-none
+                border-b-2 border-transparent
+                data-[state=active]:border-primary
+                data-[state=active]:bg-transparent
+              "
+                value="buyers"
+              >
+                Recent Buyers
+              </TabsTrigger>
+              <TabsTrigger
+                className="
+                flex-shrink-0
+                px-4 py-2
+                rounded-none
+                border-b-2 border-transparent
+                data-[state=active]:border-primary
+                data-[state=active]:bg-transparent
+              "
+                value="sellers"
+              >
+                Recent Sellers
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>
+                  Latest order activity across the platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order Code</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Buyer</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.recentOrders.map((order) => (
+                      <TableRow key={order._id}>
+                        <TableCell>{order.orderCode}</TableCell>
+                        <TableCell>
+                          {formatCurrency(order.totalAmount)}
+                        </TableCell>
+                        <TableCell>{order.itemCount}</TableCell>
+                        <TableCell>{getStatusBadge(order.status)}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(order.paymentStatus)}
+                        </TableCell>
+                        <TableCell>
+                          {data.recentBuyers.find(
+                            (b) => b._id === order.createdBy
+                          )?.name || "Unknown"}
+                        </TableCell>
+                        <TableCell>{formatDate(order.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="buyers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Buyers</CardTitle>
+                <CardDescription>Newly registered buyers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.recentBuyers.map((buyer) => (
+                      <TableRow key={buyer._id}>
+                        <TableCell>{buyer.name}</TableCell>
+                        <TableCell>{buyer.email}</TableCell>
+                        <TableCell>{buyer.phone || "N/A"}</TableCell>
+                        <TableCell>{getRoleBadge(buyer.role)}</TableCell>
+                        <TableCell>{getStatusBadge(buyer.status)}</TableCell>
+                        <TableCell>{formatDate(buyer.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="sellers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Sellers</CardTitle>
+                <CardDescription>Newly registered sellers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.recentSellers.map((seller) => (
+                      <TableRow key={seller._id}>
+                        <TableCell>{seller.name}</TableCell>
+                        <TableCell>{seller.email}</TableCell>
+                        <TableCell>{seller.phone || "N/A"}</TableCell>
+                        <TableCell>{getRoleBadge(seller.role)}</TableCell>
+                        <TableCell>{getStatusBadge(seller.status)}</TableCell>
+                        <TableCell>{formatDate(seller.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

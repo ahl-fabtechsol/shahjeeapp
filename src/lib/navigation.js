@@ -62,11 +62,11 @@ const buyerRoutes = [
     url: "/dashboard/buyer/orders",
     icon: ShoppingCart,
   },
-  {
-    title: "Wishlist",
-    url: "/dashboard/buyer/wishlist",
-    icon: Heart,
-  },
+  // {
+  //   title: "Wishlist",
+  //   url: "/dashboard/buyer/wishlist",
+  //   icon: Heart,
+  // },
   {
     title: "Profile",
     url: "/dashboard/buyer/profile",

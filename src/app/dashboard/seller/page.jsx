@@ -1,18 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  ArrowDown,
-  ArrowUp,
-  BarChart2,
-  DollarSign,
-  Package,
-  ShoppingCart,
-  Star,
-  Truck,
-  Users,
-} from "lucide-react";
-
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -21,9 +9,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getSellerDashboardData } from "@/services/dashboardService";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { DollarSign, Package, ShoppingCart, Star, Tag } from "lucide-react";
 
 export default function SellerDashboardPage() {
+  const {
+    data: dashboardData,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useQuery({
+    queryKey: ["sellerDashboardData"],
+    queryFn: () => getSellerDashboardData(),
+    enabled: true,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -39,357 +52,319 @@ export default function SellerDashboardPage() {
     show: { opacity: 1, y: 0 },
   };
 
+  const data = dashboardData;
+
+  const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
+  const formatDate = (date) => new Date(date).toLocaleDateString();
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "P":
+        return <Badge variant="default">Pending</Badge>;
+      case "U":
+        return <Badge variant="secondary">Unpaid</Badge>;
+      case "A":
+        return <Badge variant="success">Active</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  if (isError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching product data</p>
+        <p>{error?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="h-full mt-5 flex justify-center items-center">
+        <div className="flex justify-center items-center">
+          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4">
-      <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+    <div className="p-6 bg-white min-h-screen">
+      <div className="flex flex-col gap-4 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Seller Dashboard</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your store performance.
+          Overview of your store's performance and activities.
         </p>
       </div>
 
-      <Tabs defaultValue="overview" className="mt-6">
-        <TabsList className=" justify-start border-b rounded-none bg-transparent h-auto p-0">
-          <TabsTrigger
-            value="overview"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Overview
-          </TabsTrigger>
-          <TabsTrigger
-            value="analytics"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger
-            value="reports"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Reports
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            Notifications
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4"
-          >
-            <motion.div variants={item}>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Revenue
-                  </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$45,231.89</div>
-                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                    <span className="flex items-center text-green-500">
-                      <ArrowUp className="h-3 w-3 mr-1" />
-                      12.5%
-                    </span>
-                    <span>from last month</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6"
+      >
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Revenue
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(data.totalAmount)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {formatCurrency(data.totalPaidAmount)} paid
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            <motion.div variants={item}>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">+573</div>
-                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                    <span className="flex items-center text-green-500">
-                      <ArrowUp className="h-3 w-3 mr-1" />
-                      8.2%
-                    </span>
-                    <span>from last month</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Orders
+              </CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data.totalOrders}</div>
+              <p className="text-xs text-muted-foreground">
+                {data.activeOrders} active
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            <motion.div variants={item}>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Products
-                  </CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">248</div>
-                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                    <span className="flex items-center text-green-500">
-                      <ArrowUp className="h-3 w-3 mr-1" />
-                      4.3%
-                    </span>
-                    <span>new products</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data.totalProducts}</div>
+              <p className="text-xs text-muted-foreground">
+                {data.activeProducts} active
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            <motion.div variants={item}>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Customers
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">+2350</div>
-                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                    <span className="flex items-center text-red-500">
-                      <ArrowDown className="h-3 w-3 mr-1" />
-                      3.1%
-                    </span>
-                    <span>from last month</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
+        <motion.div variants={item}>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Active Deals
+              </CardTitle>
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data.activeDeals}</div>
+              <p className="text-xs text-muted-foreground">
+                {data.totalDeals} total
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Sales Overview</CardTitle>
-                <CardDescription>
-                  Compare sales performance over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  <BarChart2 className="h-16 w-16" />
-                  <span className="ml-4">Sales chart will appear here</span>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Order Status</CardTitle>
+            <CardDescription>Current order processing status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Active Orders</span>
+                  <span className="font-medium">{data.activeOrders}</span>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Recent Feedbacks</CardTitle>
-                <CardDescription>
-                  Latest customer reviews and ratings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    {
-                      name: "Emma Wilson",
-                      product: "Wireless Headphones",
-                      rating: 5,
-                      comment:
-                        "Excellent sound quality and comfortable to wear for long periods.",
-                    },
-                    {
-                      name: "James Rodriguez",
-                      product: "Smart Watch",
-                      rating: 4,
-                      comment:
-                        "Great features but battery life could be better.",
-                    },
-                    {
-                      name: "Sophia Chen",
-                      product: "Bluetooth Speaker",
-                      rating: 5,
-                      comment: "Amazing sound for such a compact speaker!",
-                    },
-                  ].map((feedback, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + index * 0.1 }}
-                      className="flex flex-col space-y-1"
-                    >
-                      <div className="flex justify-between">
-                        <span className="font-medium">{feedback.name}</span>
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < feedback.rating
-                                  ? "text-yellow-400 fill-yellow-400"
-                                  : "text-muted-foreground"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {feedback.product}
-                      </span>
-                      <p className="text-sm">{feedback.comment}</p>
-                      {index < 2 && <div className="border-t my-2" />}
-                    </motion.div>
-                  ))}
+                <Progress
+                  value={(data.activeOrders / data.totalOrders) * 100}
+                  className="h-2"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Paid Orders</span>
+                  <span className="font-medium">{data.paidOrders}</span>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Fulfillment Status</CardTitle>
-                <CardDescription>
-                  Current order processing status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Pending</span>
-                      <span className="font-medium">24</span>
-                    </div>
-                    <Progress value={24} max={100} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Processing</span>
-                      <span className="font-medium">16</span>
-                    </div>
-                    <Progress value={16} max={100} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Shipped</span>
-                      <span className="font-medium">52</span>
-                    </div>
-                    <Progress value={52} max={100} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Delivered</span>
-                      <span className="font-medium">78</span>
-                    </div>
-                    <Progress value={78} max={100} className="h-2" />
-                  </div>
+                <Progress
+                  value={(data.paidOrders / data.totalOrders) * 100}
+                  className="h-2"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Unpaid Orders</span>
+                  <span className="font-medium">{data.unpaidOrders}</span>
                 </div>
-              </CardContent>
-            </Card>
+                <Progress
+                  value={(data.unpaidOrders / data.totalOrders) * 100}
+                  className="h-2"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Products</CardTitle>
-                <CardDescription>
-                  Your best-selling products this month
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    {
-                      name: "Wireless Headphones",
-                      sold: 124,
-                      revenue: "$12,400",
-                    },
-                    { name: "Smart Watch", sold: 98, revenue: "$19,600" },
-                    { name: "Bluetooth Speaker", sold: 87, revenue: "$8,700" },
-                    { name: "Fitness Tracker", sold: 65, revenue: "$6,500" },
-                  ].map((product, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center"
-                    >
-                      <div className="space-y-1">
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {product.sold} sold
-                        </p>
-                      </div>
-                      <p className="font-medium">{product.revenue}</p>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Feedback</CardTitle>
+            <CardDescription>Latest customer reviews</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.recentFeedbacks.map((feedback, index) => (
+                <motion.div
+                  key={feedback._id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + index * 0.1 }}
+                  className="flex flex-col space-y-1"
+                >
+                  <div className="flex justify-between">
+                    <span className="font-medium">Customer Feedback</span>
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < feedback.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Shipping Overview</CardTitle>
-                <CardDescription>Current shipping status</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="flex items-center">
-                  <Truck className="h-9 w-9 text-primary p-1.5 bg-primary/10 rounded-full" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium">In Transit</p>
-                    <p className="text-xs text-muted-foreground">
-                      32 orders on the way
+                  </div>
+                  <p className="text-sm">{feedback.message}</p>
+                  {feedback.replied && (
+                    <p className="text-sm text-muted-foreground">
+                      Replied: {feedback.repliedText}
                     </p>
-                  </div>
-                  <div className="ml-auto font-medium">12%</div>
-                </div>
+                  )}
+                  {index < data.recentFeedbacks.length - 1 && (
+                    <div className="border-t my-2" />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Standard Shipping
-                    </span>
-                    <span className="font-medium">68%</span>
-                  </div>
-                  <Progress value={68} className="h-2" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Express Shipping
-                    </span>
-                    <span className="font-medium">24%</span>
-                  </div>
-                  <Progress value={24} className="h-2" />
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Next Day Delivery
-                    </span>
-                    <span className="font-medium">8%</span>
-                  </div>
-                  <Progress value={8} className="h-2" />
-                </div>
+      <div className="mt-6">
+        <Tabs defaultValue="orders" className="space-y-4">
+          <TabsList className="w-full flex flex-nowrap min-w-max justify-start border-b bg-transparent p-0">
+            <TabsTrigger
+              className="
+                flex-shrink-0
+                px-4 py-2
+                rounded-none
+                border-b-2 border-transparent
+                data-[state=active]:border-primary
+                data-[state=active]:bg-transparent
+              "
+              value="orders"
+            >
+              Recent Orders
+            </TabsTrigger>
+            <TabsTrigger
+              className="
+                flex-shrink-0
+                px-4 py-2
+                rounded-none
+                border-b-2 border-transparent
+                data-[state=active]:border-primary
+                data-[state=active]:bg-transparent
+              "
+              value="deals"
+            >
+              Recent Deals
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>Your latest order activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order Code</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.recentOrders.map((order) => (
+                      <TableRow key={order._id}>
+                        <TableCell>{order.orderCode}</TableCell>
+                        <TableCell>
+                          {formatCurrency(order.totalAmount)}
+                        </TableCell>
+                        <TableCell>{order.itemCount}</TableCell>
+                        <TableCell>{getStatusBadge(order.status)}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(order.paymentStatus)}
+                        </TableCell>
+                        <TableCell>{formatDate(order.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-            <BarChart2 className="h-16 w-16" />
-            <span className="ml-4">Analytics content will appear here</span>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="reports">
-          <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-            <BarChart2 className="h-16 w-16" />
-            <span className="ml-4">Reports content will appear here</span>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="notifications">
-          <div className="h-[400px] flex items-center justify-center text-muted-foreground">
-            <BarChart2 className="h-16 w-16" />
-            <span className="ml-4">Notifications content will appear here</span>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+          <TabsContent value="deals">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Deals</CardTitle>
+                <CardDescription>Your latest deal activity</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Deal Code</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Discount</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.recentDeals.map((deal) => (
+                      <TableRow key={deal._id}>
+                        <TableCell>{deal.dealCode.slice(0, 20)}...</TableCell>
+                        <TableCell>{deal.description}</TableCell>
+                        <TableCell>{deal.discountPercentage}%</TableCell>
+                        <TableCell>{formatCurrency(deal.price)}</TableCell>
+                        <TableCell>{getStatusBadge(deal.status)}</TableCell>
+                        <TableCell>{formatDate(deal.createdAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

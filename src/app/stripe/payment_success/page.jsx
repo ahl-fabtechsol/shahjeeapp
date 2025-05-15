@@ -27,9 +27,6 @@ export default function PaymentSuccessPage() {
             successfully.
           </CardDescription>
           <div className="mt-6 flex flex-col space-y-3">
-            <Button onClick={() => router.push("/orders")} variant="default">
-              View Your Orders
-            </Button>
             <Button onClick={() => router.push("/")} variant="outline">
               Back to Home
             </Button>

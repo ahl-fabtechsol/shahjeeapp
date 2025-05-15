@@ -27,9 +27,6 @@ export default function PaymentFailedPage() {
             contact support.
           </CardDescription>
           <div className="mt-6 flex flex-col space-y-3">
-            <Button onClick={() => router.push("/checkout")} variant="default">
-              Try Again
-            </Button>
             <Button onClick={() => router.push("/")} variant="outline">
               Back to Home
             </Button>
