@@ -63,6 +63,7 @@ export default function ProductsPage() {
         category,
         price,
         search,
+        store: "",
       }),
     staleTime: 1000 * 60 * 5,
     enabled: categoriesData && categoriesData.count > 0,

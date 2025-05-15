@@ -15,10 +15,17 @@ export const updateProduct = (id, payload) =>
 export const deleteProduct = (id) =>
   api.delete(`/product/${id}`).then((res) => res.data);
 
-export const getAllProductsSite = ({ page, limit, category, price, search }) =>
+export const getAllProductsSite = ({
+  page,
+  limit,
+  category,
+  price,
+  search,
+  store,
+}) =>
   api
     .get("/product/site", {
-      params: { page, limit, category, price, name: search },
+      params: { page, limit, category, price, name: search, store },
     })
     .then((res) => res.data);
 

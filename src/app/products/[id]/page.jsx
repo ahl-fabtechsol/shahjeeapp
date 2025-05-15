@@ -497,7 +497,7 @@ export default function ProductPage({ params }) {
               value="reviews"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
-              Reviews ({product.reviews})
+              Reviews ({productData?.results[0]?.feedbackStats?.count})
             </TabsTrigger>
           </TabsList>
 

@@ -27,6 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { getSellerStore } from "@/services/sellerStore";
+import { getAllProductsSite } from "@/services/productService";
 
 const sellersData = [
   {
@@ -215,6 +218,32 @@ export function SellerDetail({ sellerId }) {
   const [sortBy, setSortBy] = useState("popular");
   const router = useRouter();
 
+  const {
+    data: storeData,
+    isLoading: isStoreLoading,
+    isFetching: isStoreFetching,
+    isError: isStoreError,
+    error: storeError,
+  } = useQuery({
+    queryKey: ["sellerStoreSite", sellerId],
+    queryFn: () => getSellerStore(sellerId),
+    enabled: !!sellerId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const {
+    data: products,
+    isLoading: isProductsLoading,
+    isFetching: isProductsFetching,
+    isError: isProductsError,
+    error: productsError,
+  } = useQuery({
+    queryKey: ["storeProducts", sellerId],
+    queryFn: () => getAllProductsSite({ page: 1, limit: 100, store: sellerId }),
+    enabled: !!sellerId,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const filteredProducts = seller.products
     .filter(
       (product) =>
@@ -254,6 +283,44 @@ export function SellerDetail({ sellerId }) {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
+  if (isStoreError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching store data</p>
+        <p>{storeError?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (isStoreFetching || isStoreLoading) {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        <div className="flex justify-center items-center">
+          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isProductsError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching product data</p>
+        <p>{productsError?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (isProductsFetching || isProductsLoading) {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        <div className="flex justify-center items-center">
+          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <motion.div
@@ -263,7 +330,7 @@ export function SellerDetail({ sellerId }) {
         transition={{ duration: 0.5 }}
       >
         <Image
-          src={seller.coverImage || "/placeholder.svg"}
+          src={storeData?.store?.coverImage || "/placeholder.svg"}
           alt="Cover"
           fill
           className="object-cover"
@@ -272,43 +339,33 @@ export function SellerDetail({ sellerId }) {
         <div className="absolute bottom-0 left-0 p-6 flex items-end gap-6">
           <div className="relative">
             <Image
-              src={seller.image || "/placeholder.svg"}
-              alt={seller.name}
+              src={storeData?.store?.image || "/placeholder.svg"}
+              alt={storeData?.store?.name}
               width={120}
               height={120}
               className="rounded-full border-4 border-background"
             />
-            {seller.verified && (
-              <div className="absolute bottom-1 right-1 bg-green-500 text-white p-1 rounded-full">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              </div>
-            )}
           </div>
           <div className="text-white">
-            <h1 className="text-3xl font-bold">{seller.name}</h1>
+            <h1 className="text-3xl font-bold">{storeData?.store?.name}</h1>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary" className="text-xs">
-                {seller.category}
+                {storeData?.store?.category}
               </Badge>
-              <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full text-xs">
-                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                <span>{seller.rating}</span>
-              </div>
+
               <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded-full text-xs">
                 <Calendar className="h-3 w-3" />
-                <span>Since {seller.joinedDate}</span>
+                <span>
+                  Since{" "}
+                  {new Date(storeData?.store.createdAt).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "short",
+                      day: "2-digit",
+                    }
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -324,37 +381,17 @@ export function SellerDetail({ sellerId }) {
         >
           <Card>
             <CardHeader>
-              <CardTitle>About {seller.name}</CardTitle>
+              <CardTitle>About {storeData?.store?.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">{seller.description}</p>
+              <p className="text-muted-foreground">{storeData?.store?.about}</p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <Star className="h-5 w-5 fill-amber-500" />
-                    <span className="font-bold text-xl">{seller.rating}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    Rating
-                  </span>
-                </div>
-                <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                  <div className="flex items-center gap-1 text-green-500">
-                    <TrendingUp className="h-5 w-5" />
-                    <span className="font-bold text-xl">
-                      {seller.totalSales.toLocaleString()}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    Sales
-                  </span>
-                </div>
                 <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
                   <div className="flex items-center gap-1 text-purple-500">
                     <Package className="h-5 w-5" />
                     <span className="font-bold text-xl">
-                      {seller.productsCount}
+                      {storeData?.store?.productCount}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
@@ -365,7 +402,7 @@ export function SellerDetail({ sellerId }) {
                   <div className="flex items-center gap-1 text-blue-500">
                     <Users className="h-5 w-5" />
                     <span className="font-bold text-xl">
-                      {seller.followers.toLocaleString()}
+                      {storeData?.store?.followers?.length}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
@@ -379,39 +416,8 @@ export function SellerDetail({ sellerId }) {
           <div>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-2xl font-bold">
-                Products ({filteredProducts.length})
+                Products ({products?.results?.length})
               </h2>
-              <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                <Select
-                  value={productCategory}
-                  onValueChange={setProductCategory}
-                >
-                  <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="popular">Most Popular</SelectItem>
-                    <SelectItem value="rating">Highest Rated</SelectItem>
-                    <SelectItem value="priceLow">Price: Low to High</SelectItem>
-                    <SelectItem value="priceHigh">
-                      Price: High to Low
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <motion.div
@@ -420,51 +426,43 @@ export function SellerDetail({ sellerId }) {
               initial="hidden"
               animate="visible"
             >
-              {filteredProducts.map((product) => (
-                <motion.div key={product.id} variants={itemVariant}>
+              {products?.results?.map((product, index) => (
+                <motion.div key={index} variants={itemVariant}>
                   <Card
                     className="overflow-hidden h-full cursor-pointer"
-                    onClick={() => router.push(`/products/${product.id}`)}
+                    onClick={() => router.push(`/products/${product?._id}`)}
                   >
                     <div className="relative h-48">
                       <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
+                        src={product?.images[0] || "/placeholder.svg"}
+                        alt={product?.name}
                         fill
                         className="object-cover"
                       />
                       <Badge className="absolute top-2 right-2">
-                        {product.category}
+                        {product?.category?.name}
                       </Badge>
                     </div>
                     <CardContent className="pt-6">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-lg">{product.name}</h3>
+                        <h3 className="font-bold text-lg">{product?.name}</h3>
                         <span className="font-bold text-lg">
-                          ${product.price}
+                          ${product?.price}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1 mb-4">
                         <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                        <span>{product.rating}</span>
+                        <span>{product?.feedbacks?.averageRating}</span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col">
                           <span className="text-xs text-muted-foreground">
-                            Sales
-                          </span>
-                          <span className="font-medium">
-                            {product.sales.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-xs text-muted-foreground">
                             In Stock
                           </span>
                           <span className="font-medium">
-                            {product.stock} units
+                            {product?.quantity} units
                           </span>
                         </div>
                       </div>
@@ -494,97 +492,17 @@ export function SellerDetail({ sellerId }) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-muted-foreground" />
-                <span>{seller.contactInfo.email}</span>
+                <span>{storeData?.store?.email}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-muted-foreground" />
-                <span>{seller.contactInfo.phone}</span>
+                <span>{storeData?.store?.phone}</span>
               </div>
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
-                <span>{seller.contactInfo.address}</span>
+                <span>{storeData?.store?.address}</span>
               </div>
               <Button className="w-full mt-2">Contact Seller</Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Rating Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Object.entries(seller.ratingBreakdown)
-                .sort(([a], [b]) => Number(b) - Number(a))
-                .map(([rating, percentage]) => (
-                  <div key={rating} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="w-4 text-sm">{rating}</span>
-                        <Star className="h-4 w-4 fill-amber-500 text-amber-500 ml-1" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {percentage}%
-                      </span>
-                    </div>
-                    <Progress value={percentage} className="h-2" />
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Monthly Sales</h4>
-                  <div className="h-[120px] bg-muted rounded-md flex items-end justify-between p-2">
-                    {[65, 40, 75, 50, 85, 70].map((height, i) => (
-                      <motion.div
-                        key={i}
-                        className="w-8 bg-primary rounded-sm"
-                        initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
-                        transition={{ duration: 0.8, delay: i * 0.1 }}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                    <span>Jan</span>
-                    <span>Feb</span>
-                    <span>Mar</span>
-                    <span>Apr</span>
-                    <span>May</span>
-                    <span>Jun</span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium mb-2">
-                    Top Selling Categories
-                  </h4>
-                  <div className="space-y-2">
-                    {Object.entries({
-                      Audio: 45,
-                      Wearables: 30,
-                      Accessories: 15,
-                      Cameras: 10,
-                    }).map(([category, percentage]) => (
-                      <div key={category} className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">{category}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {percentage}%
-                          </span>
-                        </div>
-                        <Progress value={percentage} className="h-2" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </motion.div>
