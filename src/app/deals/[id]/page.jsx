@@ -1,28 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowRight,
   ChevronLeft,
   Heart,
   Share2,
   ShoppingCart,
-  Star,
-  Clock,
-  Check,
-  Truck,
-  ShieldCheck,
-  ArrowRight,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getDeals, getDealsForSiteById } from "@/services/dealsService";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const mockDeals = [
   {
@@ -204,6 +207,40 @@ export default function DealDetailPage() {
   const [relatedDeals, setRelatedDeals] = useState([]);
   const [quantity, setQuantity] = useState(1);
 
+  const {
+    data: dealData,
+    isLoading: dealLoading,
+    isFetching: dealFetching,
+    isError: dealError,
+    error: dealErrorMessage,
+  } = useQuery({
+    queryKey: ["dealForSite", id],
+    queryFn: () => getDealsForSiteById(id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!id,
+    retry: 1,
+  });
+
+  const {
+    data: relatedDealsData,
+    isLoading: relatedDealsLoading,
+    isFetching: relatedDealsFetching,
+    isError: relatedDealsError,
+    error: relatedDealsErrorMessage,
+  } = useQuery({
+    queryKey: ["relatedDeals", dealData?.createdBy],
+    queryFn: () =>
+      getDeals({
+        page: 1,
+        limit: 100000,
+        seller: dealData?.createdBy,
+        search: "",
+      }),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!dealData?.createdBy,
+    retry: 1,
+  });
+
   useEffect(() => {
     const timer = setTimeout(() => {
       const foundDeal = mockDeals.find((d) => d.id === id);
@@ -221,27 +258,25 @@ export default function DealDetailPage() {
     router.back();
   };
 
-  const formatTimeRemaining = (endDate) => {
-    if (!endDate) return "Limited time";
+  if (dealError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching product data</p>
+        <p>{dealErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
 
-    const end = new Date(endDate);
-    const now = new Date();
-    const diff = end - now;
+  if (relatedDealsError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching related data</p>
+        <p>{relatedDealsErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
 
-    if (diff <= 0) return "Deal ended";
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-    if (days > 0) {
-      return `${days} days, ${hours} hours left`;
-    } else {
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      return `${hours} hours, ${minutes} minutes left`;
-    }
-  };
-
-  if (loading) {
+  if (dealLoading || dealFetching) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center mb-6">
@@ -280,7 +315,19 @@ export default function DealDetailPage() {
     );
   }
 
-  if (!deal) {
+  const slideUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
+  const getOriginalPrice = (price, discount) => {
+    if (discount) {
+      return (price / (1 - discount / 100)).toFixed(2);
+    }
+    return price;
+  };
+
+  if (!dealData) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h2 className="text-2xl font-bold mb-4">Deal not found</h2>
@@ -324,8 +371,8 @@ export default function DealDetailPage() {
                   className="h-full w-full"
                 >
                   <Image
-                    src={deal.images[selectedImage] || "/placeholder.svg"}
-                    alt={deal.title}
+                    src={dealData?.images[selectedImage] || "/placeholder.svg"}
+                    alt={dealData?.dealCode}
                     fill
                     className="object-contain"
                   />
@@ -334,13 +381,13 @@ export default function DealDetailPage() {
 
               <div className="absolute top-4 right-4 flex gap-2">
                 <Badge variant="destructive" className="text-sm font-bold">
-                  {deal.discount}% OFF
+                  {dealData?.discountPercentage}% OFF
                 </Badge>
               </div>
             </motion.div>
 
             <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-              {deal.images.map((image, index) => (
+              {dealData?.images?.map((image, index) => (
                 <motion.div
                   key={index}
                   whileHover={{ scale: 1.05 }}
@@ -354,7 +401,7 @@ export default function DealDetailPage() {
                 >
                   <Image
                     src={image || "/placeholder.svg"}
-                    alt={`${deal.title} - Image ${index + 1}`}
+                    alt={`${dealData?.dealCode} - Image ${index + 1}`}
                     fill
                     className="object-cover"
                   />
@@ -370,84 +417,56 @@ export default function DealDetailPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <div>
-              <h1 className="text-3xl font-bold">{deal.title}</h1>
-              <div className="flex items-center gap-4 mt-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(deal.rating)
-                          ? "text-yellow-500 fill-yellow-500"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm font-medium">
-                    {deal.rating} ({deal.reviewCount} reviews)
-                  </span>
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {formatTimeRemaining(deal.dealEnds)}
-                </div>
-              </div>
+              <h1 className="text-3xl font-bold line-clamp-1">
+                {dealData?.dealCode}
+              </h1>
 
               <div
                 className="flex items-center gap-2 mt-4 cursor-pointer"
                 onClick={() =>
-                  (window.location.href = `/sellers/${deal.seller.id}`)
+                  (window.location.href = `/sellers/${dealData?.store}`)
                 }
               >
                 <div className="relative h-8 w-8 rounded-full overflow-hidden">
                   <Image
-                    src={deal.seller.avatar || "/placeholder.svg"}
-                    alt={deal.seller.name}
+                    src={dealData?.storeDetails?.image || "/placeholder.svg"}
+                    alt={dealData?.storeDetails?.name}
                     fill
                     className="object-cover"
                   />
                 </div>
                 <div>
                   <span className="text-sm font-medium hover:text-primary hover:underline">
-                    {deal.seller.name}
+                    {dealData?.storeDetails?.name}
                   </span>
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 mr-1" />
-                    {deal.seller.rating} • {deal.seller.productCount} products
-                  </div>
                 </div>
               </div>
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold">${deal.price}</span>
+              <span className="text-3xl font-bold">${dealData?.price}</span>
               <span className="text-lg text-muted-foreground line-through">
-                ${deal.originalPrice}
+                $
+                {getOriginalPrice(
+                  dealData?.price,
+                  dealData?.discountPercentage
+                )}
               </span>
               <Badge
                 variant="outline"
                 className="ml-2 text-green-600 border-green-600"
               >
-                Save ${(deal.originalPrice - deal.price).toFixed(2)}
+                Save $
+                {(
+                  getOriginalPrice(
+                    dealData?.price,
+                    dealData?.discountPercentage
+                  ) - dealData?.price
+                ).toFixed(2)}
               </Badge>
             </div>
 
-            <p className="text-muted-foreground">{deal.description}</p>
-
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1 text-green-600">
-                <Check className="h-4 w-4" />
-                <span>{deal.stock} in stock</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Truck className="h-4 w-4" />
-                <span>Free shipping</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <ShieldCheck className="h-4 w-4" />
-                <span>Secure transaction</span>
-              </div>
-            </div>
+            <p className="text-muted-foreground">{dealData?.description}</p>
 
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center">
@@ -487,47 +506,55 @@ export default function DealDetailPage() {
           </motion.div>
         </div>
 
-        <motion.div
-          className="mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Tabs defaultValue="details">
-            <TabsList className="w-full justify-start border-b rounded-none">
-              <TabsTrigger value="details">Details</TabsTrigger>
-              <TabsTrigger value="features">Features</TabsTrigger>
-              <TabsTrigger value="specifications">Specifications</TabsTrigger>
-            </TabsList>
-            <TabsContent value="details" className="py-4">
-              <p className="text-muted-foreground">{deal.description}</p>
-            </TabsContent>
-            <TabsContent value="features" className="py-4">
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {deal.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <Check className="h-5 w-5 text-green-600" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </TabsContent>
-            <TabsContent value="specifications" className="py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(deal.specifications).map(
-                  ([key, value], index) => (
-                    <div key={index} className="flex">
-                      <span className="font-medium w-1/3">{key}:</span>
-                      <span className="text-muted-foreground">{value}</span>
-                    </div>
-                  )
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+        <motion.div variants={slideUp} className="space-y-6 my-10">
+          <h2 className="text-2xl font-bold">Products in it</h2>
+
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {dealData?.products?.map((item, index) => (
+                <CarouselItem
+                  key={index}
+                  className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+                >
+                  <motion.div
+                    whileHover={{ y: -5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Link
+                      href={`/products/${item?._id}`}
+                      className="block h-full"
+                    >
+                      <Card className="overflow-hidden border-border/40 transition-all hover:shadow-md h-full">
+                        <div className="relative aspect-square overflow-hidden">
+                          <Image
+                            src={item?.images[0] || "/placeholder.svg"}
+                            alt="Related product"
+                            fill
+                            className="object-cover transition-transform hover:scale-105 duration-500"
+                          />
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="font-semibold mt-2">
+                            ${item?.name}
+                          </div>
+                          <div className="font-semibold mt-2">
+                            ${item?.price}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="hidden sm:block">
+              <CarouselPrevious className="left-0" />
+              <CarouselNext className="right-0" />
+            </div>
+          </Carousel>
         </motion.div>
 
-        {relatedDeals.length > 0 && (
+        {relatedDealsData?.results?.length > 0 && (
           <motion.div
             className="mt-16"
             initial={{ opacity: 0 }}
@@ -545,42 +572,46 @@ export default function DealDetailPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedDeals.map((relatedDeal) => (
+              {relatedDealsData?.results?.map((relatedDeal, index) => (
                 <motion.div
-                  key={relatedDeal.id}
+                  key={index}
                   whileHover={{ y: -5 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <Link href={`/deals/${relatedDeal.id}`}>
+                  <Link href={`/deals/${relatedDeal?._id}`}>
                     <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
                       <div className="relative aspect-video w-full overflow-hidden">
                         <Image
-                          src={relatedDeal.image || "/placeholder.svg"}
-                          alt={relatedDeal.title}
+                          src={relatedDeal?.images[0] || "/placeholder.svg"}
+                          alt={relatedDeal?.dealCode}
                           fill
                           className="object-cover"
                         />
                         <div className="absolute top-2 right-2">
                           <Badge variant="destructive" className="text-xs">
-                            {relatedDeal.discount}% OFF
+                            {relatedDeal?.discountPercentage}% OFF
                           </Badge>
                         </div>
                       </div>
                       <CardContent className="p-4">
                         <h3 className="font-medium line-clamp-1">
-                          {relatedDeal.title}
+                          {relatedDeal?.dealCode}
                         </h3>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-1">
                             <span className="font-bold">
-                              ${relatedDeal.price}
+                              ${relatedDeal?.price}
                             </span>
                             <span className="text-xs text-muted-foreground line-through">
-                              ${relatedDeal.originalPrice}
+                              $
+                              {getOriginalPrice(
+                                relatedDeal?.price,
+                                relatedDeal?.discountPercentage
+                              )}
                             </span>
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {relatedDeal.seller.name}
+                            {relatedDeal?.storeDetails?.name}
                           </span>
                         </div>
                       </CardContent>

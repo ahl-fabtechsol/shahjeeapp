@@ -1,159 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { Search, Filter, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const mockDeals = [
-  {
-    id: "1",
-    title: "Premium Wireless Headphones",
-    description: "Noise cancelling with 40 hour battery life",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 129.99,
-    originalPrice: 199.99,
-    discount: 35,
-    seller: {
-      id: "seller1",
-      name: "AudioTech Pro",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Smart Home Security System",
-    description: "Complete home protection with AI monitoring",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 249.99,
-    originalPrice: 349.99,
-    discount: 28,
-    seller: {
-      id: "seller2",
-      name: "SecureHome",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  },
-  {
-    id: "3",
-    title: "Organic Skincare Bundle",
-    description: "All-natural ingredients for radiant skin",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 79.99,
-    originalPrice: 119.99,
-    discount: 33,
-    seller: {
-      id: "seller3",
-      name: "NaturalGlow",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  },
-  {
-    id: "4",
-    title: 'Ultra HD Smart TV - 55"',
-    description: "Crystal clear display with smart features",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 499.99,
-    originalPrice: 699.99,
-    discount: 28,
-    seller: {
-      id: "seller4",
-      name: "ElectroVision",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    featured: true,
-  },
-  {
-    id: "5",
-    title: "Professional Kitchen Knife Set",
-    description: "Chef-quality knives for home cooking",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 89.99,
-    originalPrice: 149.99,
-    discount: 40,
-    seller: {
-      id: "seller5",
-      name: "CulinaryExperts",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  },
-  {
-    id: "6",
-    title: "Fitness Smartwatch",
-    description: "Track your health and fitness goals",
-    image: "/placeholder.svg?height=300&width=300",
-    price: 149.99,
-    originalPrice: 199.99,
-    discount: 25,
-    seller: {
-      id: "seller6",
-      name: "FitTech",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  },
-];
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
+import { getDealsForSite } from "@/services/dealsService";
+import { useQuery } from "@tanstack/react-query";
 
 export default function DealsPage() {
-  const [deals, setDeals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("featured");
+  const {
+    delayedSearch: search,
+    searchValue,
+    handleSearchChange,
+  } = useDebouncedSearch();
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      let filteredDeals = [...mockDeals];
+  const {
+    data: dealsData,
+    isLoading: dealsLoading,
+    isFetching: dealsFetching,
+    isError: dealsError,
+    error: dealsErrorMessage,
+  } = useQuery({
+    queryKey: ["dealsForSite", { page, limit, search }],
+    queryFn: () => getDealsForSite({ page, limit, search: search }),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+    enabled: true,
+  });
 
-      if (searchQuery) {
-        filteredDeals = filteredDeals.filter(
-          (deal) =>
-            deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            deal.seller.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-
-      switch (sortBy) {
-        case "priceAsc":
-          filteredDeals.sort((a, b) => a.price - b.price);
-          break;
-        case "priceDesc":
-          filteredDeals.sort((a, b) => b.price - a.price);
-          break;
-        case "discount":
-          filteredDeals.sort((a, b) => b.discount - a.discount);
-          break;
-        case "featured":
-        default:
-          filteredDeals.sort(
-            (a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)
-          );
-          break;
-      }
-
-      setDeals(filteredDeals);
-      setLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, sortBy]);
+  const totalPages = dealsData ? Math.ceil(dealsData?.count / limit) : 1;
 
   const container = {
     hidden: { opacity: 0 },
@@ -169,6 +59,22 @@ export default function DealsPage() {
     hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1 },
   };
+
+  const getOriginalPrice = (price, discount) => {
+    if (discount) {
+      return (price / (1 - discount / 100)).toFixed(2);
+    }
+    return price;
+  };
+
+  if (dealsError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching Deals</p>
+        <p>{dealsErrorMessage?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -190,36 +96,13 @@ export default function DealsPage() {
           <Input
             placeholder="Search deals or sellers..."
             className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex gap-2">
-              <Filter className="h-4 w-4" />
-              Sort by
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSortBy("featured")}>
-              Featured
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("priceAsc")}>
-              Price: Low to High
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("priceDesc")}>
-              Price: High to Low
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortBy("discount")}>
-              Biggest Discount
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
-      {loading ? (
+      {dealsFetching || dealsLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="overflow-hidden">
@@ -240,81 +123,129 @@ export default function DealsPage() {
             </Card>
           ))}
         </div>
-      ) : deals.length > 0 ? (
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {deals.map((deal) => (
-            <motion.div key={deal.id} variants={item}>
-              <Link href={`/deals/${deal.id}`}>
-                <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow duration-300">
-                  <div className="relative aspect-video w-full overflow-hidden">
-                    <Image
-                      src={deal.image || "/placeholder.svg"}
-                      alt={deal.title}
-                      fill
-                      className="object-cover transition-transform duration-300 hover:scale-105"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge
-                        variant="destructive"
-                        className="text-sm font-bold"
-                      >
-                        {deal.discount}% OFF
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-bold text-lg line-clamp-1">
-                        {deal.title}
-                      </h3>
-                    </div>
-                    <div
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.location.href = `/sellers/${deal.seller.id}`;
-                      }}
-                    >
-                      <div className="relative h-6 w-6 rounded-full overflow-hidden">
-                        <Image
-                          src={deal.seller.avatar || "/placeholder.svg"}
-                          alt={deal.seller.name}
-                          fill
-                          className="object-cover"
-                        />
+      ) : dealsData?.results?.length > 0 ? (
+        <>
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {dealsData?.results?.map((deal, index) => (
+              <motion.div key={index} variants={item}>
+                <Link href={`/deals/${deal._id}`}>
+                  <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow duration-300">
+                    <div className="relative aspect-video w-full overflow-hidden">
+                      <Image
+                        src={deal?.images[0] || "/placeholder.svg"}
+                        alt={deal?.dealCode || "Deal Image"}
+                        fill
+                        className="object-cover transition-transform duration-300 hover:scale-105"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge
+                          variant="destructive"
+                          className="text-sm font-bold"
+                        >
+                          {deal?.discountPercentage}% OFF
+                        </Badge>
                       </div>
-                      <span className="text-sm text-muted-foreground hover:text-primary hover:underline">
-                        {deal.seller.name}
-                      </span>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {deal.description}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg">${deal.price}</span>
-                      <span className="text-sm text-muted-foreground line-through">
-                        ${deal.originalPrice}
-                      </span>
-                    </div>
-                    <Button size="sm" variant="secondary">
-                      View Deal
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-bold text-lg line-clamp-1">
+                          {deal?.dealCode}
+                        </h3>
+                      </div>
+                      <div
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = `/sellers/${deal?.store}`;
+                        }}
+                      >
+                        <div className="relative h-6 w-6 rounded-full overflow-hidden">
+                          <Image
+                            src={
+                              deal?.storeDetails?.image || "/placeholder.svg"
+                            }
+                            alt={deal?.storeDetails?.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground hover:text-primary hover:underline">
+                          {deal?.storeDetails?.name}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pb-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {deal?.description}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">
+                          ${deal?.price}
+                        </span>
+                        <span className="text-sm text-muted-foreground line-through">
+                          $
+                          {getOriginalPrice(
+                            deal?.price,
+                            deal?.discountPercentage
+                          )}
+                        </span>
+                      </div>
+                      <Button size="sm" variant="secondary">
+                        View Deal
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex justify-center mt-8"
+          >
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                <Button
+                  key={pg}
+                  variant={pg === page ? "default" : "outline"}
+                  size="sm"
+                  className="w-10"
+                  onClick={() => setPage(pg)}
+                >
+                  {pg}
+                </Button>
+              ))}
+
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </motion.div>
+        </>
       ) : (
         <motion.div
           initial={{ opacity: 0 }}
