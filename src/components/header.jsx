@@ -14,9 +14,11 @@ import { ShoppingCart, User, Menu, Globe, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getUser, isLoggedIn, logout } from "@/store/authStore";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useCartStore } from "@/store/cartStore";
 
 export default function Header() {
   const pathname = usePathname();
+  const totalItems = useCartStore((s) => s.totalItems);
   const loggedIn = isLoggedIn();
   const router = useRouter();
   const user = getUser();
@@ -179,7 +181,7 @@ export default function Header() {
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                  3
+                  {totalItems}
                 </Badge>
                 <span className="sr-only">Cart</span>
               </Button>

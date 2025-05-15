@@ -1,18 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
-import {
-  CheckCircle2,
-  Package,
-  Truck,
-  Calendar,
-  X,
-  ChevronRight,
-  Download,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,12 +7,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { createOrder } from "@/services/orderService";
+import { useMutation } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
+import { Calendar, CheckCircle2, Loader2, Package, Truck } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 6);
+
+  const mutation = useMutation({
+    mutationFn: (data) => createOrder(data),
+    onSuccess: (data) => {
+      toast.success("Order created successfully");
+      window.location.href = data.url;
+      onClose();
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to create order");
+      console.error("Error creating order:", error);
+    },
+  });
 
   const steps = [
     {
@@ -42,9 +51,30 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
     {
       icon: Calendar,
       label: "Delivery",
-      description: "Expected by May 10, 2025",
+      description: `Your order will arrive on ${deliveryDate.toLocaleDateString()}`,
     },
   ];
+
+  const handleSubmit = () => {
+    const products = orderDetails?.items?.map((item) => ({
+      product: item.product._id,
+      quantity: item.quantity,
+    }));
+    const seller = orderDetails?.items[0]?.seller;
+    const totalAmount = orderDetails?.total;
+    const itemCount = orderDetails?.items?.reduce(
+      (acc, item) => acc + item.quantity,
+      0
+    );
+
+    const data = {
+      products,
+      seller,
+      totalAmount,
+      itemCount,
+    };
+    mutation.mutate(data);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -90,12 +120,8 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
               </div>
             </div>
             <DialogTitle className="text-center text-2xl font-bold">
-              Order Successfully Placed!
+              Order Summary
             </DialogTitle>
-            <p className="text-center text-muted-foreground mt-2">
-              Thank you for your purchase. Your order #
-              {orderDetails.orderNumber} has been confirmed.
-            </p>
           </motion.div>
         </DialogHeader>
 
@@ -139,9 +165,9 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
 
             <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
               <AnimatePresence>
-                {orderDetails.items.map((item, index) => (
+                {orderDetails?.items?.map((item, index) => (
                   <motion.div
-                    key={item.id}
+                    key={index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 + index * 0.1 }}
@@ -149,22 +175,22 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
                   >
                     <div className="relative h-12 w-12 overflow-hidden rounded-md flex-shrink-0">
                       <Image
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
+                        src={item?.product?.images[0] || "/placeholder.svg"}
+                        alt={item?.product?.name}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">
-                        {item.name}
+                        {item?.product?.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Qty: {item.quantity}
+                        Qty: {item?.quantity}
                       </p>
                     </div>
                     <div className="text-sm font-medium">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${(item?.product?.price * item.quantity).toFixed(2)}
                     </div>
                   </motion.div>
                 ))}
@@ -179,17 +205,19 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-between">
-            <Button variant="outline" className="flex items-center gap-1">
-              <Download className="h-4 w-4 mr-1" />
-              Download Receipt
-            </Button>
-
-            <Button asChild>
-              <Link href="/orders" className="flex items-center">
-                Track Order
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Link>
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
+            <Button
+              onClick={handleSubmit}
+              disabled={mutation.isLoading || mutation.isPending}
+            >
+              {mutation.isLoading || mutation.isPending ? (
+                <span className="flex items-center justify-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing…
+                </span>
+              ) : (
+                "Pay Order"
+              )}
             </Button>
           </div>
         </div>

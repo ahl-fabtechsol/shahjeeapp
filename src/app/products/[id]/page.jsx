@@ -1,34 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  ChevronRight,
-  Minus,
-  Plus,
-  ShoppingCart,
-  Star,
-  Truck,
-  Heart,
-  Share2,
-  Check,
   ArrowLeft,
   ArrowRight,
-  Loader2,
+  Check,
+  ChevronRight,
+  Heart,
+  Share2,
+  ShoppingCart,
+  Star,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
@@ -36,16 +24,27 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
-import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   getAllProductsSite,
   getProductDetailSite,
 } from "@/services/productService";
+import { useCartStore } from "@/store/cartStore";
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
 import StarRating from "../(components)/startRating";
 
 export default function ProductPage({ params }) {
+  const addToCart = useCartStore((state) => state.addToCart);
+  const cart = useCartStore((state) => state.cart);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -124,20 +123,18 @@ export default function ProductPage({ params }) {
   };
 
   const handleAddToCart = () => {
+    const product = productData.results[0];
+    const sellerId = product.createdBy;
+
+    if (cart.length > 0 && cart[0].seller !== sellerId) {
+      toast.error(
+        "You can only add items from one seller at a time. Please clear your cart first."
+      );
+      return;
+    }
+
+    addToCart(product, sellerId, quantity);
     setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  };
-
-  const incrementQuantity = () => {
-    if (quantity < productData?.results[0]?.quantity) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
   };
 
   const fadeIn = {
@@ -159,6 +156,15 @@ export default function ProductPage({ params }) {
       },
     },
   };
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      const isProductInCart = cart.some(
+        (item) => item.product._id === productData?.results[0]?._id
+      );
+      setAddedToCart(isProductInCart);
+    }
+  }, []);
 
   if (isProductError) {
     return (
@@ -428,56 +434,19 @@ export default function ProductPage({ params }) {
             variants={slideUp}
             className="flex items-center space-x-4"
           >
-            <div className="flex items-center border rounded-md">
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-none"
-                  onClick={decrementQuantity}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-              </motion.div>
-              <span className="w-12 text-center">{quantity}</span>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-none"
-                  onClick={incrementQuantity}
-                  disabled={quantity >= product.stock}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </motion.div>
-            </div>
             <motion.div
               className="flex-1 relative"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <AnimatePresence>
-                {addedToCart && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex items-center justify-center bg-primary text-primary-foreground rounded-md"
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Added to Cart!
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <AnimatePresence></AnimatePresence>
               <Button
                 className="w-full"
                 onClick={handleAddToCart}
                 disabled={addedToCart}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                Add to Cart
+                {addedToCart ? "Added to Cart" : "Add to Cart"}
               </Button>
             </motion.div>
           </motion.div>

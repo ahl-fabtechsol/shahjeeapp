@@ -20,8 +20,12 @@ import {
   Package,
 } from "lucide-react";
 import { OrderPlacedModal } from "./(components)/orderPlacedModal";
+import { useCartStore } from "@/store/cartStore";
 
 export default function CartPage() {
+  const cart = useCartStore((state) => state.cart);
+  const incrementQuantity = useCartStore((state) => state.increaseQuantity);
+  const decrementQuantity = useCartStore((state) => state.decreaseQuantity);
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
@@ -52,13 +56,11 @@ export default function CartPage() {
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
 
-  const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+  const subtotal = cart?.reduce(
+    (total, item) => total + item?.product?.price * item.quantity,
     0
   );
-  const shipping = 0; // Free shipping
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shipping + tax - discount;
+  const total = subtotal;
 
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) return;
@@ -94,7 +96,7 @@ export default function CartPage() {
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
 
-      {cartItems.length > 0 ? (
+      {cart?.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="border rounded-lg overflow-hidden shadow-sm">
@@ -106,14 +108,13 @@ export default function CartPage() {
                       <th className="text-center p-4">Quantity</th>
                       <th className="text-right p-4">Price</th>
                       <th className="text-right p-4">Total</th>
-                      <th className="p-4"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     <AnimatePresence>
-                      {cartItems.map((item) => (
+                      {cart?.map((item, index) => (
                         <motion.tr
-                          key={item.id}
+                          key={index}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, height: 0, overflow: "hidden" }}
@@ -126,18 +127,21 @@ export default function CartPage() {
                                 className="relative h-16 w-16 overflow-hidden rounded-md"
                               >
                                 <Image
-                                  src={item.image || "/placeholder.svg"}
-                                  alt={item.name}
+                                  src={
+                                    item?.product?.images[0] ||
+                                    "/placeholder.svg"
+                                  }
+                                  alt={item?.product?.name}
                                   fill
                                   className="object-cover"
                                 />
                               </motion.div>
                               <div>
                                 <Link
-                                  href={`/products/${item.id}`}
+                                  href={`/products/${item?.product?._id}`}
                                   className="font-medium hover:underline"
                                 >
-                                  {item.name}
+                                  {item?.product?.name}
                                 </Link>
                               </div>
                             </div>
@@ -150,20 +154,26 @@ export default function CartPage() {
                                   size="icon"
                                   className="h-8 w-8 rounded-none"
                                   onClick={() =>
-                                    updateQuantity(item.id, item.quantity - 1)
+                                    decrementQuantity(
+                                      item?.product?._id,
+                                      item?.seller
+                                    )
                                   }
                                 >
                                   <Minus className="h-3 w-3" />
                                 </Button>
                                 <span className="w-8 text-center">
-                                  {item.quantity}
+                                  {item?.quantity}
                                 </span>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 rounded-none"
                                   onClick={() =>
-                                    updateQuantity(item.id, item.quantity + 1)
+                                    incrementQuantity(
+                                      item?.product?._id,
+                                      item?.seller
+                                    )
                                   }
                                 >
                                   <Plus className="h-3 w-3" />
@@ -172,20 +182,10 @@ export default function CartPage() {
                             </div>
                           </td>
                           <td className="p-4 text-right">
-                            ${item.price.toFixed(2)}
+                            ${item?.product?.price?.toFixed(2)}
                           </td>
                           <td className="p-4 text-right font-medium">
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </td>
-                          <td className="p-4 text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
+                            ${(item?.product?.price * item.quantity).toFixed(2)}
                           </td>
                         </motion.tr>
                       ))}
@@ -203,38 +203,7 @@ export default function CartPage() {
                 <ChevronLeft className="mr-1 h-4 w-4" />
                 Continue Shopping
               </Link>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                <div className="flex w-full max-w-sm items-center space-x-2">
-                  <Input
-                    placeholder="Coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                  />
-                  <Button onClick={applyCoupon}>Apply</Button>
-                </div>
-              </div>
             </div>
-
-            {couponError && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 text-red-500 text-sm flex items-center"
-              >
-                <X className="h-4 w-4 mr-1" /> {couponError}
-              </motion.div>
-            )}
-
-            {couponSuccess && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 text-green-500 text-sm flex items-center"
-              >
-                <Check className="h-4 w-4 mr-1" /> {couponSuccess}
-              </motion.div>
-            )}
           </div>
 
           <div>
@@ -252,28 +221,6 @@ export default function CartPage() {
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
 
-                {discount > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="flex justify-between text-green-600"
-                  >
-                    <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
-                  </motion.div>
-                )}
-
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span>
-                    {shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
-                <Separator />
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
@@ -288,17 +235,6 @@ export default function CartPage() {
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground text-center pt-2">
                   <CreditCard className="h-4 w-4" />
                   Secure checkout powered by Stripe
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Truck className="h-4 w-4 text-muted-foreground" />
-                  <span>Free shipping on orders over $50</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  <span>30-day easy returns</span>
                 </div>
               </div>
             </motion.div>
@@ -332,8 +268,7 @@ export default function CartPage() {
         isOpen={showOrderModal}
         onClose={() => setShowOrderModal(false)}
         orderDetails={{
-          orderNumber: "ORD-" + Math.floor(100000 + Math.random() * 900000),
-          items: cartItems,
+          items: cart,
           total: total,
         }}
       />
