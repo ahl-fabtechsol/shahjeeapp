@@ -41,6 +41,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import StarRating from "../(components)/startRating";
+import FeedbackDialog from "../(components)/feedbackDialog";
 
 export default function ProductPage({ params }) {
   const addToCart = useCartStore((state) => state.addToCart);
@@ -50,6 +51,7 @@ export default function ProductPage({ params }) {
   const [addedToCart, setAddedToCart] = useState(false);
   const [wishlist, setWishlist] = useState(false);
   const id = useParams().id;
+  const [reviewModal, setReviewModal] = useState(false);
 
   const {
     data: productData,
@@ -81,46 +83,6 @@ export default function ProductPage({ params }) {
     staleTime: 1000 * 60 * 5,
     enabled: !!id && !!productData?.results[0]?.category?._id,
   });
-  const product = {
-    id: id || "1",
-    name: "Wireless Earbuds Pro",
-    price: 79.99,
-    originalPrice: 99.99,
-    description:
-      "Experience crystal-clear sound with our premium wireless earbuds. Featuring active noise cancellation, touch controls, and a comfortable fit for all-day wear.",
-    images: [
-      "/placeholder.svg?height=600&width=600",
-      "/placeholder.svg?height=600&width=600&text=Image+2",
-      "/placeholder.svg?height=600&width=600&text=Image+3",
-      "/placeholder.svg?height=600&width=600&text=Image+4",
-    ],
-    category: "Electronics",
-    badge: "New",
-    rating: 4.5,
-    reviews: 128,
-    stock: 15,
-    specifications: [
-      { name: "Battery Life", value: "Up to 8 hours (24 hours with case)" },
-      { name: "Connectivity", value: "Bluetooth 5.2" },
-      { name: "Water Resistance", value: "IPX4 (splash resistant)" },
-      { name: "Noise Cancellation", value: "Active Noise Cancellation (ANC)" },
-      { name: "Charging", value: "USB-C and Wireless Charging" },
-      { name: "Microphones", value: "4 built-in microphones" },
-    ],
-    features: [
-      "Active Noise Cancellation for immersive sound",
-      "Transparency mode for hearing your surroundings",
-      "Customizable touch controls",
-      "Voice assistant compatibility",
-      "Automatic ear detection",
-      "Sweat and water resistant",
-    ],
-    colors: [
-      { name: "Black", value: "bg-black" },
-      { name: "White", value: "bg-white border" },
-      { name: "Blue", value: "bg-blue-500" },
-    ],
-  };
 
   const handleAddToCart = () => {
     const product = productData.results[0];
@@ -192,6 +154,14 @@ export default function ProductPage({ params }) {
       variants={fadeIn}
       className="max-w-7xl mx-auto py-8 px-4 sm:px-6"
     >
+      {reviewModal && productData?.results[0]?._id && (
+        <FeedbackDialog
+          isOpen={reviewModal}
+          onClose={() => setReviewModal(false)}
+          seller={productData?.results[0]?.createdBy}
+          product={productData?.results[0]?._id}
+        />
+      )}
       <motion.nav
         variants={slideUp}
         className="flex items-center text-sm mb-6 overflow-x-auto whitespace-nowrap pb-2"
@@ -527,27 +497,14 @@ export default function ProductPage({ params }) {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Button>Write a Review</Button>
+                    <Button onClick={() => setReviewModal(true)}>
+                      Write a Review
+                    </Button>
                   </motion.div>
                 </div>
 
                 <div className="space-y-4">
-                  {[
-                    {
-                      name: "John D.",
-                      rating: 5,
-                      date: "2 days ago",
-                      comment:
-                        "These earbuds are amazing! The sound quality is excellent and the noise cancellation works really well. Battery life is as advertised and they're very comfortable to wear for long periods.",
-                    },
-                    {
-                      name: "Sarah M.",
-                      rating: 4,
-                      date: "1 week ago",
-                      comment:
-                        "Great earbuds for the price. The sound is clear and the battery lasts all day. The only downside is that the touch controls can be a bit sensitive sometimes.",
-                    },
-                  ].map((review, index) => (
+                  {productData?.results[0]?.feedbacks?.map((review, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, y: 20 }}
@@ -557,7 +514,9 @@ export default function ProductPage({ params }) {
                     >
                       <div className="flex justify-between">
                         <div>
-                          <h4 className="font-medium">{review.name}</h4>
+                          <h4 className="font-medium">
+                            {review?.createdBy?.name}
+                          </h4>
                           <div className="flex mt-1">
                             {[...Array(5)].map((_, i) => (
                               <Star
@@ -572,23 +531,14 @@ export default function ProductPage({ params }) {
                           </div>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {review.date}
+                          {new Date(review.createdAt).toLocaleDateString()}
                         </div>
                       </div>
                       <p className="mt-2 text-sm leading-relaxed">
-                        {review.comment}
+                        {review.message}
                       </p>
                     </motion.div>
                   ))}
-
-                  <div className="text-center">
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Button variant="outline">Load More Reviews</Button>
-                    </motion.div>
-                  </div>
                 </div>
               </motion.div>
             </TabsContent>

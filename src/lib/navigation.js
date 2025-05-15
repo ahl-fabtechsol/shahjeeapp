@@ -114,19 +114,9 @@ const sellerRoutes = [
     icon: ShoppingCart,
   },
   {
-    title: "Shipping",
-    url: "/dashboard/seller/shipping",
-    icon: Truck,
-  },
-  {
-    title: "Customers",
-    url: "/dashboard/seller/customers",
+    title: "Followers",
+    url: "/dashboard/seller/followers",
     icon: Users,
-  },
-  {
-    title: "Analytics",
-    url: "/dashboard/seller/analytics",
-    icon: BarChart2,
   },
   {
     title: "Feedbacks",

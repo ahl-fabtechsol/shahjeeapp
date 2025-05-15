@@ -10,6 +10,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { createOrder } from "@/services/orderService";
+import { useCartStore } from "@/store/cartStore";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, CheckCircle2, Loader2, Package, Truck } from "lucide-react";
@@ -18,6 +19,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
+  const clearCart = useCartStore((state) => state.clearCart);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const deliveryDate = new Date();
@@ -28,6 +30,7 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
     onSuccess: (data) => {
       toast.success("Order created successfully");
       window.location.href = data.url;
+      clearCart();
       onClose();
     },
     onError: (error) => {

@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   Edit,
-  Filter,
   Loader2,
   MoreHorizontal,
   Plus,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { CustomTable } from "@/components/customTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,21 +31,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { getCategories } from "@/services/categoryService";
 import { deleteProduct, getProducts } from "@/services/productService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ProductDialog } from "./(components)/productDialog";
-import { set } from "date-fns";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
-import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 
 const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
