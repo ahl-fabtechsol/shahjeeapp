@@ -15,3 +15,9 @@ export const updateOrder = (id, payload) =>
 
 export const deleteOrder = (id) =>
   api.delete(`/order/${id}`).then((res) => res.data);
+
+export const refundOrder = (id) =>
+  api.post(`/order/refund/${id}`).then((res) => res.data);
+
+export const cancelOrder = (id) =>
+  api.post(`/order/cancel/${id}`).then((res) => res.data);

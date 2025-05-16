@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { MoreHorizontal, Search } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -15,11 +15,20 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import useDebouncedSearch from "@/hooks/useDebouncedSearch";
-import { getAllOrders } from "@/services/orderService";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { cancelOrder, getAllOrders } from "@/services/orderService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export default function BuyerOrdersPage() {
+  const queryClient = useQueryClient();
   const {
     delayedSearch: search,
     handleSearchChange,
@@ -27,7 +36,9 @@ export default function BuyerOrdersPage() {
   } = useDebouncedSearch();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [deletecConfimation, setDeleteConfirmation] = useState(false);
+  const [cancelConfirmation, setCancelConfirmation] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [statusValue, setStatusValue] = useState("");
 
   const {
     data: ordersData,
@@ -36,11 +47,34 @@ export default function BuyerOrdersPage() {
     isError: ordersError,
     error: ordersErrorMessage,
   } = useQuery({
-    queryKey: ["orders", page, limit, search],
+    queryKey: ["buyerOrders", page, limit, search],
     queryFn: () => getAllOrders({ page, limit, search, seller: "" }),
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload) => cancelOrder(selectedOrder?._id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["orders"]);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error while updating order"
+      );
+    },
+  });
+  const handleUpdateOrder = () => {
+    const payload = {
+      status: statusValue,
+    };
+    toast.promise(updateMutation.mutateAsync(payload), {
+      loading: "Changing Status",
+      success: "Status Updated...",
+      error: (error) =>
+        error?.response?.data?.message || "Error while updating order",
+    });
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -154,6 +188,32 @@ export default function BuyerOrdersPage() {
       header: "Total",
       cell: (info) => `$${info.getValue().toFixed(2)}`,
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: (info) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedOrder(info.row.original);
+                setStatusValue("C");
+                setCancelConfirmation(true);
+              }}
+            >
+              Cancel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
   ];
 
   if (ordersError) {
@@ -170,13 +230,13 @@ export default function BuyerOrdersPage() {
 
   return (
     <div className="p-4">
-      {deletecConfimation && (
+      {cancelConfirmation && (
         <ConfirmationModal
-          open={deletecConfimation}
-          onOpenChange={setDeleteConfirmation}
-          title="Delete Order"
-          description="Are you sure you want to delete this Order? This action cannot be undone."
-          onConfirm={handleDeleteOrder}
+          open={cancelConfirmation}
+          onOpenChange={setCancelConfirmation}
+          title="Cancel Order"
+          description="Are you sure you want to cancel this Order? This action cannot be undone."
+          onConfirm={handleUpdateOrder}
         />
       )}
       <style>{noScrollbarStyle}</style>

@@ -6,37 +6,48 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { getSliders } from "@/services/slidersService";
 import { getUser, isLoggedIn } from "@/store/authStore";
+import { useQuery } from "@tanstack/react-query";
 import Autoplay from "embla-carousel-autoplay";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRef } from "react";
 
-const slides = [
-  {
-    title: "Explore Electronics",
-    description: "Latest tech gadgets and smart devices in one place.",
-    image:
-      "https://images.unsplash.com/photo-1733506260573-2ddbf1db9b1a?q=80&w=2096&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    title: "Fashion & Style",
-    description: "Trendy outfits and accessories for every season.",
-    image:
-      "https://images.unsplash.com/photo-1726661025397-d6877dbf2da5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-  {
-    title: "Home Decor",
-    description: "Elegant furniture and decor ideas for modern homes.",
-    image:
-      "https://images.unsplash.com/photo-1726661025461-5635b785ec23?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-  },
-];
-
 export default function Hero() {
   const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: false }));
   const loggedIn = isLoggedIn();
   const user = getUser();
+  const {
+    data: slidersData,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useQuery({
+    queryFn: () => getSliders(),
+    queryKey: ["siteProductsFeatured"],
+    enabled: true,
+    staleTime: 1000 * 60 * 5,
+  });
+  if (isError) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <p className="text-red-500">Error fetching Sliders data</p>
+        <p>{error?.response?.data?.message || "Error"}</p>
+      </div>
+    );
+  }
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="h-full mt-5 flex justify-center items-center">
+        <div className="flex justify-center items-center">
+          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden bg-background">
@@ -91,7 +102,7 @@ export default function Hero() {
           className="w-full mx-auto p-4 lg:px-32"
         >
           <CarouselContent>
-            {slides.map((slide, index) => (
+            {slidersData?.results?.map((slide, index) => (
               <CarouselItem key={index} className="">
                 <motion.div
                   className="w-full  overflow-hidden rounded-2xl shadow-lg border bg-white dark:bg-card transition-all"
@@ -99,14 +110,14 @@ export default function Hero() {
                   transition={{ type: "spring", stiffness: 200 }}
                 >
                   <img
-                    src={slide.image}
-                    alt={slide.title}
+                    src={slide?.image}
+                    alt={slide?.name}
                     className="w-full h-[250px] sm:h-[350px] md:h-[400px] lg:h-[500px] object-cover"
                   />
                   <div className="p-5 text-left">
-                    <h3 className="text-2xl font-semibold">{slide.title}</h3>
+                    <h3 className="text-2xl font-semibold">{slide?.name}</h3>
                     <p className="text-muted-foreground mt-2">
-                      {slide.description}
+                      {slide?.description}
                     </p>
                   </div>
                 </motion.div>

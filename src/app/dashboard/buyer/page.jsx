@@ -179,8 +179,8 @@ export default function BuyerDashboardPage() {
         </motion.div>
       </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="">
+        <Card className="">
           <CardHeader>
             <CardTitle>Order Status</CardTitle>
             <CardDescription>Your current order progress</CardDescription>
@@ -231,63 +231,6 @@ export default function BuyerDashboardPage() {
                 </p>
                 <Link href="/products">
                   <Button>Shop Now</Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Your Feedback</CardTitle>
-            <CardDescription>Feedback you've provided</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data.feedbackCount > 0 ? (
-              <div className="space-y-4">
-                {data.recentFeedbacks.map((feedback, index) => (
-                  <motion.div
-                    key={feedback._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + index * 0.1 }}
-                    className="flex flex-col space-y-1"
-                  >
-                    <div className="flex justify-between">
-                      <span className="font-medium">Your Feedback</span>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < feedback.rating
-                                ? "text-yellow-400 fill-yellow-400"
-                                : "text-muted-foreground"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm">{feedback.message}</p>
-                    {feedback.replied && (
-                      <p className="text-sm text-muted-foreground">
-                        Seller Replied: {feedback.repliedText}
-                      </p>
-                    )}
-                    {index < data.recentFeedbacks.length - 1 && (
-                      <div className="border-t my-2" />
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">
-                  You haven't left any feedback yet.
-                </p>
-                <Link href="/products">
-                  <Button>Explore Products</Button>
                 </Link>
               </div>
             )}

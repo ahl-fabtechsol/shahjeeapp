@@ -70,8 +70,23 @@ export default function AdminDashboardPage() {
         return <Badge variant="default">Pending</Badge>;
       case "U":
         return <Badge variant="secondary">Unpaid</Badge>;
-      case "A":
-        return <Badge variant="success">Active</Badge>;
+      case "R":
+        return <Badge variant="destructive">Refunded</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const getOrderStatusBadge = (status) => {
+    switch (status) {
+      case "P":
+        return <Badge variant="default">Pending</Badge>;
+      case "C":
+        return <Badge variant="destructive">Cancelled</Badge>;
+      case "S":
+        return <Badge variant="secondary">Shipped</Badge>;
+      case "D":
+        return <Badge variant="success">Delivered</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -356,7 +371,9 @@ export default function AdminDashboardPage() {
                           {formatCurrency(order.totalAmount)}
                         </TableCell>
                         <TableCell>{order.itemCount}</TableCell>
-                        <TableCell>{getStatusBadge(order.status)}</TableCell>
+                        <TableCell>
+                          {getOrderStatusBadge(order.status)}
+                        </TableCell>
                         <TableCell>
                           {getStatusBadge(order.paymentStatus)}
                         </TableCell>

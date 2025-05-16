@@ -19,13 +19,31 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import useDebouncedSearch from "@/hooks/useDebouncedSearch";
-import { deleteOrder, getAllOrders } from "@/services/orderService";
+import {
+  deleteOrder,
+  getAllOrders,
+  refundOrder,
+  updateOrder,
+} from "@/services/orderService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SelectIcon } from "@radix-ui/react-select";
 
 export default function SellerOrdersPage() {
   const queryClient = useQueryClient();
@@ -38,6 +56,8 @@ export default function SellerOrdersPage() {
   const [limit, setLimit] = useState(10);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [deletecConfimation, setDeleteConfirmation] = useState(false);
+  const [refundConfirmation, setRefundConfirmation] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("P");
 
   const {
     data: ordersData,
@@ -64,6 +84,51 @@ export default function SellerOrdersPage() {
       );
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload) => updateOrder(selectedOrder?._id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["orders"]);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error while updating order"
+      );
+    },
+  });
+  const handleUpdateOrder = (value) => {
+    const payload = {
+      status: value,
+    };
+    toast.promise(updateMutation.mutateAsync(payload), {
+      loading: "Changing Status",
+      success: "Status Updated...",
+      error: (error) =>
+        error?.response?.data?.message || "Error while updating order",
+    });
+  };
+
+  const refundOrderMutation = useMutation({
+    mutationFn: () => refundOrder(selectedOrder?._id),
+    onSuccess: () => {
+      toast.success("Order refunded successfully");
+      queryClient.invalidateQueries(["orders"]);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error while refunding order"
+      );
+    },
+  });
+
+  const handleRefundOrder = () => {
+    toast.promise(refundOrderMutation.mutateAsync(), {
+      loading: "Refunding order...",
+      success: "Order refunded successfully",
+      error: (error) =>
+        error?.response?.data?.message || "Error while refunding order",
+    });
+  };
 
   const handleDeleteOrder = () => {
     toast.promise(deleteMutation.mutateAsync(selectedOrder._id), {
@@ -202,9 +267,39 @@ export default function SellerOrdersPage() {
             {/* <DropdownMenuItem>
               <Eye className="h-4 w-4 mr-2" /> View Details
             </DropdownMenuItem> */}
-            <DropdownMenuItem>
-              <Package className="h-4 w-4 mr-2" /> Update Status
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent sideOffset={2}>
+                <DropdownMenuRadioGroup
+                  value={selectedStatus}
+                  onValueChange={(value) => {
+                    setSelectedStatus(value);
+                    setSelectedOrder(info.row.original);
+                    handleUpdateOrder(value);
+                  }}
+                >
+                  <DropdownMenuRadioItem value="P">
+                    Pending
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="S">
+                    Shipped
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="D">
+                    Delivered
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            {info.row.original.paymentStatus !== "R" && (
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedOrder(info.row.original);
+                  setRefundConfirmation(true);
+                }}
+              >
+                Refund
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               className="text-red-600"
               onClick={() => {
@@ -241,6 +336,15 @@ export default function SellerOrdersPage() {
           title="Delete Order"
           description="Are you sure you want to delete this Order? This action cannot be undone."
           onConfirm={handleDeleteOrder}
+        />
+      )}
+      {refundConfirmation && (
+        <ConfirmationModal
+          open={refundConfirmation}
+          onOpenChange={setRefundConfirmation}
+          title="Refund Order"
+          description="Are you sure you want to refund this Order? This action cannot be undone."
+          onConfirm={handleRefundOrder}
         />
       )}
       <style>{noScrollbarStyle}</style>

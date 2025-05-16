@@ -24,10 +24,11 @@ export const getAllProductsSite = ({
   price,
   search,
   store,
+  featured,
 }) =>
   api
     .get("/product/site", {
-      params: { page, limit, category, price, name: search, store },
+      params: { page, limit, category, price, name: search, store, featured },
     })
     .then((res) => res.data);
 

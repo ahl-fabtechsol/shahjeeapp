@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  ChevronDown,
-  Edit,
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { MoreHorizontal, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -32,11 +24,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import useDebouncedSearch from "@/hooks/useDebouncedSearch";
-import { getCategories } from "@/services/categoryService";
-import { deleteProduct, getProducts } from "@/services/productService";
+import {
+  deleteProduct,
+  getProducts,
+  updateProduct,
+} from "@/services/productService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ProductDialog } from "./(components)/productDialog";
 
 const noScrollbarStyle = `
   .no-scrollbar::-webkit-scrollbar {
@@ -48,33 +42,19 @@ const noScrollbarStyle = `
   }
 `;
 
-export default function SellerProductsPage() {
+export default function AdminProductsPage() {
   const {
     delayedSearch: search,
     handleSearchChange,
     searchValue,
   } = useDebouncedSearch();
   const queryClient = useQueryClient();
-  const [productDialog, setProductDialog] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [mode, setMode] = useState("add");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [deletecConfimation, setDeleteConfirmation] = useState(false);
-  const {
-    data: categories,
-    isLoading: categoriesLoading,
-    isFetching: categoriesFetching,
-    isError: categoriesError,
-    error: categoriesErrorMessage,
-  } = useQuery({
-    queryKey: ["categories", { page, limit }],
-    enabled: true,
-    queryFn: () => getCategories({ page: 1, limit: 100 }),
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
-
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [updateConfirmation, setUpdateConfirmation] = useState(false);
   const {
     data: productsData,
     isLoading: productsLoading,
@@ -82,7 +62,7 @@ export default function SellerProductsPage() {
     isError: productsError,
     error: productsErrorMessage,
   } = useQuery({
-    queryKey: ["products", { page, limit, search }],
+    queryKey: ["adminProducts", { page, limit, search }],
     enabled: true,
     queryFn: () => getProducts({ page, limit, search: search }),
     staleTime: 1000 * 60 * 5,
@@ -101,6 +81,36 @@ export default function SellerProductsPage() {
       );
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (payload) => updateProduct(selectedProduct._id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["adminProducts"]);
+      toast.success("Product updated successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Error while updating product"
+      );
+    },
+  });
+
+  const handleUpdateProduct = () => {
+    const payload = {
+      status: selectedStatus,
+    };
+    toast.promise(updateMutation.mutateAsync(payload), {
+      loading: "Updating product...",
+      success: () => {
+        setSelectedProduct(null);
+        return "Product updated successfully";
+      },
+      error: (error) => {
+        setSelectedProduct(null);
+        return error?.response?.data?.message || "Error while updating product";
+      },
+    });
+  };
 
   const handleDeleteProduct = async () => {
     await toast.promise(deleteMutation.mutateAsync(selectedProduct._id), {
@@ -147,6 +157,11 @@ export default function SellerProductsPage() {
       accessorKey: "stock",
       header: "Stock",
       cell: (info) => info.row.original.quantity,
+    },
+    {
+      accessorKey: "Seller",
+      header: "Seller",
+      cell: (info) => info.row.original.createdByData.name,
     },
     {
       accessorKey: "stock",
@@ -205,18 +220,28 @@ export default function SellerProductsPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => {
-                setMode("edit");
-                setSelectedProduct(info.row.original);
-                setProductDialog(true);
-              }}
-            >
-              <Edit className="h-4 w-4 mr-2" /> Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <ChevronDown className="h-4 w-4 mr-2" /> View Details
-            </DropdownMenuItem>
+
+            {info.row.original.status === "A" ? (
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedProduct(info.row.original);
+                  setSelectedStatus("S");
+                  setUpdateConfirmation(true);
+                }}
+              >
+                Suspend
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedProduct(info.row.original);
+                  setSelectedStatus("A");
+                  setUpdateConfirmation(true);
+                }}
+              >
+                Active
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600"
@@ -233,26 +258,6 @@ export default function SellerProductsPage() {
     },
   ];
 
-  if (categoriesLoading || categoriesFetching) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (categoriesError) {
-    toast.error(
-      categoriesErrorMessage?.response?.data?.message || "Error while fetching"
-    );
-    return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <p className="text-red-500">Error fetching categories data</p>
-        <p>{categoriesErrorMessage?.response?.data?.message || "Error"}</p>
-      </div>
-    );
-  }
-
   if (productsError) {
     toast.error(
       productsErrorMessage?.response?.data?.message || "Error while fetching"
@@ -267,15 +272,6 @@ export default function SellerProductsPage() {
 
   return (
     <div className="p-4">
-      {productDialog && (
-        <ProductDialog
-          open={productDialog}
-          onOpenChange={setProductDialog}
-          categories={categories?.results}
-          mode={mode}
-          selectedProduct={selectedProduct}
-        />
-      )}
       {deletecConfimation && (
         <ConfirmationModal
           open={deletecConfimation}
@@ -285,6 +281,15 @@ export default function SellerProductsPage() {
           onConfirm={handleDeleteProduct}
         />
       )}
+      {updateConfirmation && (
+        <ConfirmationModal
+          open={updateConfirmation}
+          onOpenChange={setUpdateConfirmation}
+          title="Update Product"
+          description="Are you sure you want to update this product?"
+          onConfirm={handleUpdateProduct}
+        />
+      )}
       <style>{noScrollbarStyle}</style>
 
       <div className="flex flex-col gap-4">
@@ -292,19 +297,9 @@ export default function SellerProductsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Products</h1>
             <p className="text-muted-foreground">
-              Manage your product inventory and listings.
+              Manage product inventory and listings.
             </p>
           </div>
-          <Button
-            className="sm:w-auto"
-            onClick={() => {
-              setMode("add");
-              setSelectedProduct(null);
-              setProductDialog(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Product
-          </Button>
         </div>
 
         <div className="grid gap-4 grid-cols-1 2xl:grid-cols-4">

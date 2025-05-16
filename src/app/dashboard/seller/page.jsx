@@ -114,7 +114,7 @@ export default function SellerDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(data.totalAmount)}
+                {formatCurrency(data?.totalAmount)}
               </div>
               <p className="text-xs text-muted-foreground">
                 {formatCurrency(data.totalPaidAmount)} paid

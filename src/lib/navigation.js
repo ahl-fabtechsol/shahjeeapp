@@ -1,7 +1,4 @@
 import {
-  AlertTriangle,
-  BarChart2,
-  Heart,
   Home,
   MessageSquare,
   Package,
@@ -28,6 +25,11 @@ const adminRoutes = [
     title: "Order Management",
     url: "/dashboard/admin/orders",
     icon: ShoppingBag,
+  },
+  {
+    title: "Product Management",
+    url: "/dashboard/admin/products",
+    icon: Package,
   },
   {
     title: "System Settings",
@@ -100,11 +102,11 @@ const sellerRoutes = [
     url: "/dashboard/seller/orders",
     icon: ShoppingCart,
   },
-  {
-    title: "Followers",
-    url: "/dashboard/seller/followers",
-    icon: Users,
-  },
+  // {
+  //   title: "Followers",
+  //   url: "/dashboard/seller/followers",
+  //   icon: Users,
+  // },
   {
     title: "Feedbacks",
     url: "/dashboard/seller/feedbacks",

@@ -537,6 +537,12 @@ export default function ProductPage({ params }) {
                       <p className="mt-2 text-sm leading-relaxed">
                         {review.message}
                       </p>
+                      {review?.replied && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          <span className="text-xs text-gray-400">Reply:</span>{" "}
+                          {review?.repliedText}
+                        </p>
+                      )}
                     </motion.div>
                   ))}
                 </div>

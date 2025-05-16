@@ -46,7 +46,7 @@ export default function AdminOrdersPage() {
     isError: ordersError,
     error: ordersErrorMessage,
   } = useQuery({
-    queryKey: ["orders", page, limit, search],
+    queryKey: ["adminOrders", page, limit, search],
     queryFn: () => getAllOrders({ page, limit, search, seller: "" }),
     staleTime: 1000 * 60 * 5,
     retry: 1,
