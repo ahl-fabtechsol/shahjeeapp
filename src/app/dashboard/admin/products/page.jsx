@@ -164,8 +164,8 @@ export default function AdminProductsPage() {
       cell: (info) => info.row.original.createdByData.name,
     },
     {
-      accessorKey: "stock",
-      header: "Stock",
+      accessorKey: "stockStatus",
+      header: "Stock Status",
       cell: (info) => (
         <Badge
           variant="outline"

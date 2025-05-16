@@ -1,43 +1,8 @@
-import Link from "next/link";
-import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { getAllProductsSite } from "@/services/productService";
-import { useQuery } from "@tanstack/react-query";
+import Image from "next/image";
+import Link from "next/link";
 
-export default function FeaturedProducts() {
-  const {
-    data: productsData,
-    isLoading,
-    isError,
-    error,
-    isFetching,
-  } = useQuery({
-    queryFn: () =>
-      getAllProductsSite({ page: 1, limit: 10000, featured: true }),
-    queryKey: ["siteProductsFeatured"],
-    enabled: true,
-    staleTime: 1000 * 60 * 5,
-    retry: 1,
-  });
-  if (isError) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <p className="text-red-500">Error fetching Prodcuts data</p>
-        <p>{error?.response?.data?.message || "Error"}</p>
-      </div>
-    );
-  }
-
-  if (isLoading || isFetching || !productsData) {
-    return (
-      <div className="h-full mt-5 flex justify-center items-center">
-        <div className="flex justify-center items-center">
-          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
-  }
-
+export default function FeaturedProducts({ data }) {
   return (
     <section className="w-full p-6 lg:px-32">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
@@ -58,7 +23,7 @@ export default function FeaturedProducts() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-6">
-        {productsData?.results?.map((product, index) => (
+        {data?.map((product, index) => (
           <Link
             href={`/products/${product?._id}`}
             key={index}

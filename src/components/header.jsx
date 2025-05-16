@@ -58,7 +58,7 @@ export default function Header() {
                 <div className="p-6 border-b">
                   <Link href="/" className="flex items-center gap-2">
                     <Globe className="h-6 w-6" />
-                    <span className="font-bold text-xl">GlobalMarket</span>
+                    <span className="font-bold text-xl">MakeEasy</span>
                   </Link>
                 </div>
 
@@ -82,7 +82,7 @@ export default function Header() {
                 </nav>
 
                 <div className="p-4 border-t text-sm text-muted-foreground text-center">
-                  &copy; 2025 GlobalMarket
+                  &copy; 2025 MakeEasy
                 </div>
               </div>
             </SheetContent>
@@ -90,7 +90,7 @@ export default function Header() {
 
           <Link href="/" className="hidden items-center gap-2  md:flex ">
             <Globe className="h-6 w-6" />
-            <span className="font-bold text-xl">GlobalMarket</span>
+            <span className="font-bold text-xl">MakeEasy</span>
           </Link>
 
           <NavigationMenu className="hidden lg:flex">
@@ -176,17 +176,15 @@ export default function Header() {
             </Link>
           )}
 
-          {loggedIn && (
-            <Link href="/cart" className="cursor-pointer">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                  {totalItems}
-                </Badge>
-                <span className="sr-only">Cart</span>
-              </Button>
-            </Link>
-          )}
+          <Link href="/cart" className="cursor-pointer">
+            <Button variant="ghost" size="icon" className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                {totalItems}
+              </Badge>
+              <span className="sr-only">Cart</span>
+            </Button>
+          </Link>
 
           {loggedIn && (
             <Button variant="ghost" size="icon" onClick={handleLogout}>

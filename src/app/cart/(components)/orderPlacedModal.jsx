@@ -10,6 +10,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { createOrder } from "@/services/orderService";
+import { isLoggedIn } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
+  const loggedIn = isLoggedIn();
   const clearCart = useCartStore((state) => state.clearCart);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
@@ -59,6 +61,10 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
   ];
 
   const handleSubmit = () => {
+    if (!loggedIn) {
+      toast.error("Please log in to proceed with the order");
+      return;
+    }
     const products = orderDetails?.items?.map((item) => ({
       product: item.product._id,
       quantity: item.quantity,

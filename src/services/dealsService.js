@@ -23,9 +23,9 @@ export const getProductsForDeals = () =>
     .get("/product", { params: { page: 1, limit: 1000, fields: "_id,name" } })
     .then((res) => res.data);
 
-export const getDealsForSite = ({ page, limit, search }) =>
+export const getDealsForSite = ({ page, limit, seller, search }) =>
   api
-    .get("/deals/site", { params: { page, limit, dealCode: search } })
+    .get("/deals/site", { params: { page, limit, seller, dealCode: search } })
     .then((res) => res.data);
 
 export const getDealsForSiteById = (id) =>

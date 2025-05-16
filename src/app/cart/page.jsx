@@ -1,26 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { useCartStore } from "@/store/cartStore";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
+  CreditCard,
   Minus,
   Plus,
   ShoppingCart,
-  Trash,
-  Check,
-  X,
-  CreditCard,
-  Truck,
-  Package,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 import { OrderPlacedModal } from "./(components)/orderPlacedModal";
-import { useCartStore } from "@/store/cartStore";
 
 export default function CartPage() {
   const cart = useCartStore((state) => state.cart);

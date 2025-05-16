@@ -6,48 +6,16 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { getSliders } from "@/services/slidersService";
 import { getUser, isLoggedIn } from "@/store/authStore";
-import { useQuery } from "@tanstack/react-query";
 import Autoplay from "embla-carousel-autoplay";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRef } from "react";
 
-export default function Hero() {
+export default function Hero({ data }) {
   const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: false }));
   const loggedIn = isLoggedIn();
   const user = getUser();
-  const {
-    data: slidersData,
-    isLoading,
-    isError,
-    error,
-    isFetching,
-  } = useQuery({
-    queryFn: () => getSliders(),
-    queryKey: ["siteProductsFeatured"],
-    enabled: true,
-    staleTime: 1000 * 60 * 5,
-  });
-  if (isError) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center">
-        <p className="text-red-500">Error fetching Sliders data</p>
-        <p>{error?.response?.data?.message || "Error"}</p>
-      </div>
-    );
-  }
-
-  if (isLoading || isFetching) {
-    return (
-      <div className="h-full mt-5 flex justify-center items-center">
-        <div className="flex justify-center items-center">
-          <div className="w-12 h-12 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative overflow-hidden bg-background">
@@ -102,7 +70,7 @@ export default function Hero() {
           className="w-full mx-auto p-4 lg:px-32"
         >
           <CarouselContent>
-            {slidersData?.results?.map((slide, index) => (
+            {data?.map((slide, index) => (
               <CarouselItem key={index} className="">
                 <motion.div
                   className="w-full  overflow-hidden rounded-2xl shadow-lg border bg-white dark:bg-card transition-all"

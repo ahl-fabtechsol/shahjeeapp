@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,13 +19,14 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getDeals, getDealsForSiteById } from "@/services/dealsService";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { getDealsForSite, getDealsForSiteById } from "@/services/dealsService";
 import { createOrder } from "@/services/orderService";
+import { isLoggedIn } from "@/store/authStore";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export default function DealDetailPage() {
+  const loggedIn = isLoggedIn();
   const params = useParams();
   const router = useRouter();
   const { id } = params;
@@ -54,7 +56,7 @@ export default function DealDetailPage() {
   } = useQuery({
     queryKey: ["relatedDeals", dealData?.createdBy],
     queryFn: () =>
-      getDeals({
+      getDealsForSite({
         page: 1,
         limit: 100000,
         seller: dealData?.createdBy,
@@ -82,6 +84,10 @@ export default function DealDetailPage() {
   };
 
   const handleBuy = async () => {
+    if (!loggedIn) {
+      toast.error("Please log in to proceed with the order");
+      return;
+    }
     const products = dealData?.products?.map((item) => ({
       product: item._id,
       quantity: 1,

@@ -106,7 +106,7 @@ export function Sellers({ search }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className=" mt-6">
                     <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
                       <div className="flex items-center gap-1 text-purple-500">
                         <Package className="h-4 w-4" />
@@ -116,17 +116,6 @@ export function Sellers({ search }) {
                       </div>
                       <span className="text-xs text-muted-foreground mt-1">
                         Products
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-1 text-blue-500">
-                        <Users className="h-4 w-4" />
-                        <span className="font-bold">
-                          {seller?.followers?.length}
-                        </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground mt-1">
-                        Followers
                       </span>
                     </div>
                   </div>

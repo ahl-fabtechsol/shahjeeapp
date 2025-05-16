@@ -11,13 +11,15 @@ export const useAuthStore = create(
       user: null,
       isLoggedIn: false,
 
-      login: ({ accessToken, refreshToken, user }) =>
+      login: ({ accessToken, refreshToken, user }) => {
         set({
           accessToken,
           refreshToken,
           user,
           isLoggedIn: true,
-        }),
+        });
+        document.cookie = `role=${user.role}; Path=/;`;
+      },
 
       logout: () =>
         set({
@@ -27,7 +29,12 @@ export const useAuthStore = create(
           isLoggedIn: false,
         }),
 
-      setUser: (user) => set({ user }),
+      setUser: (user) => {
+        set({ user });
+        // Also update cookie if role changes
+        document.cookie = `role=${user.role}; Path=/;`;
+      },
+
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken }),
       clearTokens: () => set({ accessToken: null, refreshToken: null }),

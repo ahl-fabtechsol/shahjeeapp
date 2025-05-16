@@ -1,35 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  Star,
-  TrendingUp,
-  Package,
-  Users,
   Calendar,
   Mail,
-  Phone,
   MapPin,
+  Package,
+  Phone,
   ShoppingBag,
+  Star,
+  Users,
 } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { getSellerStore } from "@/services/sellerStore";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllProductsSite } from "@/services/productService";
+import { getSellerStore } from "@/services/sellerStore";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 const sellersData = [
   {
@@ -396,17 +387,6 @@ export function SellerDetail({ sellerId }) {
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
                     Products
-                  </span>
-                </div>
-                <div className="flex flex-col items-center p-4 bg-muted rounded-lg">
-                  <div className="flex items-center gap-1 text-blue-500">
-                    <Users className="h-5 w-5" />
-                    <span className="font-bold text-xl">
-                      {storeData?.store?.followers?.length}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    Followers
                   </span>
                 </div>
               </div>
