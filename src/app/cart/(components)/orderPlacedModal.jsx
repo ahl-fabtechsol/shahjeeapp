@@ -199,7 +199,7 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
                       </p>
                     </div>
                     <div className="text-sm font-medium">
-                      ${(item?.product?.price * item.quantity).toFixed(2)}
+                      Rs.{(item?.product?.price * item.quantity).toFixed(2)}
                     </div>
                   </motion.div>
                 ))}
@@ -210,7 +210,7 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
 
             <div className="flex justify-between font-medium">
               <span>Total</span>
-              <span>${orderDetails.total.toFixed(2)}</span>
+              <span>Rs.{orderDetails.total.toFixed(2)}</span>
             </div>
           </div>
 

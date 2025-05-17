@@ -188,10 +188,10 @@ export default function DealsPage() {
                     <CardFooter className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">
-                          ${deal?.price}
+                          Rs.{deal?.price}
                         </span>
                         <span className="text-sm text-muted-foreground line-through">
-                          $
+                          Rs.
                           {getOriginalPrice(
                             deal?.price,
                             deal?.discountPercentage

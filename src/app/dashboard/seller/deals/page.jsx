@@ -134,7 +134,7 @@ export default function SellerDealsPage() {
     {
       accessorKey: "price",
       header: "Price",
-      cell: (info) => `$${info.getValue().toFixed(2)}`,
+      cell: (info) => `Rs.${info.getValue().toFixed(2)}`,
     },
     {
       accessorKey: "status",

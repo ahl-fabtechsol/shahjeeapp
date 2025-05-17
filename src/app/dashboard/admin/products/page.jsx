@@ -151,7 +151,7 @@ export default function AdminProductsPage() {
     {
       accessorKey: "price",
       header: "Price",
-      cell: (info) => `$${info.getValue().toFixed(2)}`,
+      cell: (info) => `Rs.${info.getValue().toFixed(2)}`,
     },
     {
       accessorKey: "stock",
@@ -343,7 +343,7 @@ export default function AdminProductsPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Value</span>
                 <span className="font-medium">
-                  $
+                  Rs.
                   {productsData?.results
                     ?.reduce(
                       (sum, product) => sum + product.price * product.quantity,

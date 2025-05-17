@@ -56,7 +56,7 @@ export default function BuyerDashboardPage() {
 
   const data = dashboardData;
 
-  const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount) => `Rs.${amount.toFixed(2)}`;
   const formatDate = (date) => new Date(date).toLocaleDateString();
 
   const getStatusBadge = (status) => {

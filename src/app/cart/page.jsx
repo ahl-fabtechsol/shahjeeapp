@@ -175,10 +175,11 @@ export default function CartPage() {
                             </div>
                           </td>
                           <td className="p-4 text-right">
-                            ${item?.product?.price?.toFixed(2)}
+                            Rs.{item?.product?.price?.toFixed(2)}
                           </td>
                           <td className="p-4 text-right font-medium">
-                            ${(item?.product?.price * item.quantity).toFixed(2)}
+                            Rs.
+                            {(item?.product?.price * item.quantity).toFixed(2)}
                           </td>
                         </motion.tr>
                       ))}
@@ -211,12 +212,12 @@ export default function CartPage() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Rs.{subtotal.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between font-medium text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>Rs.{total.toFixed(2)}</span>
                 </div>
               </div>
 

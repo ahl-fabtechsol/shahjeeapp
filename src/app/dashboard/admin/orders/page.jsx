@@ -184,7 +184,7 @@ export default function AdminOrdersPage() {
     {
       accessorKey: "totalAmount",
       header: "Total",
-      cell: (info) => `$${info.getValue().toFixed(2)}`,
+      cell: (info) => `Rs.${info.getValue().toFixed(2)}`,
     },
     {
       id: "actions",
@@ -296,7 +296,7 @@ export default function AdminOrdersPage() {
               <div className="flex justify-between pt-2 border-t">
                 <span className="text-muted-foreground">Total Revenue</span>
                 <span className="font-medium">
-                  $
+                  Rs.
                   {ordersData?.results
                     .reduce((sum, order) => sum + order.totalAmount, 0)
                     .toFixed(2)}

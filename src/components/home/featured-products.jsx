@@ -48,7 +48,7 @@ export default function FeaturedProducts({ data }) {
               </CardContent>
               <CardFooter className="p-4 pt-0 flex justify-between items-center">
                 <div className="font-semibold">
-                  ${product?.price?.toFixed(2)}
+                  Rs.{product?.price?.toFixed(2)}
                 </div>
               </CardFooter>
             </Card>

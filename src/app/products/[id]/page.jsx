@@ -358,7 +358,7 @@ export default function ProductPage({ params }) {
 
           <motion.div variants={slideUp} className="flex items-baseline">
             <span className="text-3xl font-bold">
-              ${productData?.results[0]?.price.toFixed(2)}
+              Rs.{productData?.results[0]?.price.toFixed(2)}
             </span>
           </motion.div>
 
@@ -591,7 +591,7 @@ export default function ProductPage({ params }) {
                             reviews={item?.feedbacks?.count}
                           />
                           <div className="font-semibold mt-2">
-                            ${item?.price}
+                            Rs.{item?.price}
                           </div>
                         </CardContent>
                       </Card>

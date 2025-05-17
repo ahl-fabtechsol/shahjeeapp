@@ -141,7 +141,7 @@ export default function SellerProductsPage() {
     {
       accessorKey: "price",
       header: "Price",
-      cell: (info) => `$${info.getValue().toFixed(2)}`,
+      cell: (info) => `Rs.${info.getValue().toFixed(2)}`,
     },
     {
       accessorKey: "stock",
@@ -149,8 +149,8 @@ export default function SellerProductsPage() {
       cell: (info) => info.row.original.quantity,
     },
     {
-      accessorKey: "stock",
-      header: "Stock",
+      accessorKey: "stockStatus",
+      header: "Stock Status",
       cell: (info) => (
         <Badge
           variant="outline"
@@ -348,7 +348,7 @@ export default function SellerProductsPage() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total Value</span>
                 <span className="font-medium">
-                  $
+                  Rs.
                   {productsData?.results
                     ?.reduce(
                       (sum, product) => sum + product.price * product.quantity,

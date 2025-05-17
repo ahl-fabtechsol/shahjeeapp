@@ -300,9 +300,9 @@ export default function DealDetailPage() {
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold">${dealData?.price}</span>
+              <span className="text-3xl font-bold">Rs.{dealData?.price}</span>
               <span className="text-lg text-muted-foreground line-through">
-                $
+                Rs.
                 {getOriginalPrice(
                   dealData?.price,
                   dealData?.discountPercentage
@@ -312,7 +312,7 @@ export default function DealDetailPage() {
                 variant="outline"
                 className="ml-2 text-green-600 border-green-600"
               >
-                Save $
+                Save Rs.
                 {(
                   getOriginalPrice(
                     dealData?.price,
@@ -376,10 +376,10 @@ export default function DealDetailPage() {
                         </div>
                         <CardContent className="p-4">
                           <div className="font-semibold mt-2">
-                            ${item?.name}
+                            Rs.{item?.name}
                           </div>
                           <div className="font-semibold mt-2">
-                            ${item?.price}
+                            Rs.{item?.price}
                           </div>
                         </CardContent>
                       </Card>
@@ -441,10 +441,10 @@ export default function DealDetailPage() {
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-1">
                             <span className="font-bold">
-                              ${relatedDeal?.price}
+                              Rs.{relatedDeal?.price}
                             </span>
                             <span className="text-xs text-muted-foreground line-through">
-                              $
+                              Rs.
                               {getOriginalPrice(
                                 relatedDeal?.price,
                                 relatedDeal?.discountPercentage

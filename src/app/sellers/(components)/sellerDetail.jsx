@@ -9,10 +9,8 @@ import {
   Phone,
   ShoppingBag,
   Star,
-  Users,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,191 +20,7 @@ import { getSellerStore } from "@/services/sellerStore";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-const sellersData = [
-  {
-    id: "1",
-    name: "TechGadgets Pro",
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=400&width=1200",
-    rating: 4.8,
-    totalSales: 12450,
-    productsCount: 78,
-    followers: 2340,
-    category: "Electronics",
-    joinedDate: "Jan 2020",
-    verified: true,
-    description:
-      "TechGadgets Pro is your one-stop shop for all things tech. We specialize in high-quality electronics, gadgets, and accessories at competitive prices. Our team of tech enthusiasts carefully selects each product to ensure it meets our standards of quality and innovation.",
-    contactInfo: {
-      email: "contact@techgadgetspro.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Tech Avenue, San Francisco, CA 94107",
-    },
-    ratingBreakdown: {
-      5: 78,
-      4: 15,
-      3: 5,
-      2: 1,
-      1: 1,
-    },
-    products: [
-      {
-        id: 1,
-        name: "Wireless Earbuds Pro",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 129.99,
-        rating: 4.9,
-        sales: 2340,
-        stock: 45,
-        category: "Audio",
-      },
-      {
-        id: 2,
-        name: "Smart Watch X1",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 199.99,
-        rating: 4.7,
-        sales: 1890,
-        stock: 32,
-        category: "Wearables",
-      },
-      {
-        id: 3,
-        name: "Bluetooth Speaker Mini",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 79.99,
-        rating: 4.6,
-        sales: 1560,
-        stock: 28,
-        category: "Audio",
-      },
-      {
-        id: 4,
-        name: "Ultra HD Action Camera",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 249.99,
-        rating: 4.8,
-        sales: 1230,
-        stock: 15,
-        category: "Cameras",
-      },
-      {
-        id: 5,
-        name: "Noise Cancelling Headphones",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 179.99,
-        rating: 4.9,
-        sales: 2100,
-        stock: 22,
-        category: "Audio",
-      },
-      {
-        id: 6,
-        name: "Portable Power Bank 20000mAh",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 49.99,
-        rating: 4.7,
-        sales: 3240,
-        stock: 60,
-        category: "Accessories",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Fashion Forward",
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=400&width=1200",
-    rating: 4.6,
-    totalSales: 8970,
-    productsCount: 124,
-    followers: 1890,
-    category: "Clothing",
-    joinedDate: "Mar 2021",
-    verified: true,
-    description:
-      "Fashion Forward brings you the latest trends in clothing and accessories. Our curated collections feature stylish, high-quality pieces that help you express your unique style. We work with ethical manufacturers to ensure our products are both fashionable and responsibly made.",
-    contactInfo: {
-      email: "hello@fashionforward.com",
-      phone: "+1 (555) 987-6543",
-      address: "456 Style Street, New York, NY 10001",
-    },
-    ratingBreakdown: {
-      5: 70,
-      4: 20,
-      3: 7,
-      2: 2,
-      1: 1,
-    },
-    products: [
-      {
-        id: 1,
-        name: "Premium Denim Jacket",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 89.99,
-        rating: 4.7,
-        sales: 1240,
-        stock: 35,
-        category: "Outerwear",
-      },
-      {
-        id: 2,
-        name: "Casual Cotton T-Shirt",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 29.99,
-        rating: 4.5,
-        sales: 2100,
-        stock: 120,
-        category: "Tops",
-      },
-      {
-        id: 3,
-        name: "Designer Sunglasses",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 149.99,
-        rating: 4.8,
-        sales: 890,
-        stock: 18,
-        category: "Accessories",
-      },
-      {
-        id: 4,
-        name: "Leather Crossbody Bag",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 79.99,
-        rating: 4.6,
-        sales: 760,
-        stock: 25,
-        category: "Bags",
-      },
-      {
-        id: 5,
-        name: "Slim Fit Chino Pants",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 59.99,
-        rating: 4.4,
-        sales: 1450,
-        stock: 45,
-        category: "Bottoms",
-      },
-      {
-        id: 6,
-        name: "Minimalist Watch",
-        image: "/placeholder.svg?height=200&width=200",
-        price: 119.99,
-        rating: 4.9,
-        sales: 980,
-        stock: 12,
-        category: "Accessories",
-      },
-    ],
-  },
-];
-
 export function SellerDetail({ sellerId }) {
-  const seller = sellersData.find((s) => s.id === sellerId) || sellersData[0];
-  const [productCategory, setProductCategory] = useState("all");
-  const [sortBy, setSortBy] = useState("popular");
   const router = useRouter();
 
   const {
@@ -234,26 +48,6 @@ export function SellerDetail({ sellerId }) {
     enabled: !!sellerId,
     staleTime: 1000 * 60 * 5,
   });
-
-  const filteredProducts = seller.products
-    .filter(
-      (product) =>
-        productCategory === "all" ||
-        product.category.toLowerCase() === productCategory.toLowerCase()
-    )
-    .sort((a, b) => {
-      if (sortBy === "popular") return b.sales - a.sales;
-      if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "priceLow") return a.price - b.price;
-      if (sortBy === "priceHigh") return b.price - a.price;
-      return 0;
-    });
-
-  const categories = [
-    "all",
-    ...new Set(seller.products.map((p) => p.category.toLowerCase())),
-  ];
-
   const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.6 } },
@@ -427,7 +221,7 @@ export function SellerDetail({ sellerId }) {
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-bold text-lg">{product?.name}</h3>
                         <span className="font-bold text-lg">
-                          ${product?.price}
+                          Rs.{product?.price}
                         </span>
                       </div>
 

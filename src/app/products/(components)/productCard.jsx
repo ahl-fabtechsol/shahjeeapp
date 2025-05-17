@@ -99,7 +99,7 @@ const ProductCard = ({ product, index }) => {
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between items-center">
             <div className="font-semibold text-lg">
-              ${product?.price?.toFixed(2)}
+              Rs.{product?.price?.toFixed(2)}
             </div>
           </CardFooter>
         </Card>
