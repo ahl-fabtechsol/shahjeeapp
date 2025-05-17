@@ -4,6 +4,9 @@ export function middleware(request) {
   const { pathname } = request.nextUrl;
   const role = request.cookies.get("role")?.value;
 
+  console.log("Middleware role:", role);
+  console.log("Middleware pathname:", pathname);
+
   if (pathname.startsWith("/dashboard/admin") && role !== "AD") {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
