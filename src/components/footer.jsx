@@ -12,7 +12,7 @@ export default function Footer() {
               <span className="font-bold text-xl">GlobalMarket</span>
             </Link>
             <p className="text-muted-foreground text-sm">
-              Your global marketplace for sourcing products from verified
+              Your Make Easy marketplace for sourcing products from verified
               suppliers worldwide.
             </p>
           </div>

@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "GlobalMarket - Your Worldwide Marketplace",
+  title: "Make Easy - Your Worldwide Marketplace",
   description: "Find products from suppliers around the world",
 };
 
