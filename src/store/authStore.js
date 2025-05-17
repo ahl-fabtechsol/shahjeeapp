@@ -31,7 +31,6 @@ export const useAuthStore = create(
 
       setUser: (user) => {
         set({ user });
-        // Also update cookie if role changes
         document.cookie = `role=${user.role}; Path=/;`;
       },
 
