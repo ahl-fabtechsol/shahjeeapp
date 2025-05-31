@@ -217,23 +217,22 @@ export default function UserDialog({ open, mode, currentUser, onOpenChange }) {
             )}
           </div>
 
-          {!isView ||
-            (mode !== "edit" && (
-              <div className="flex flex-col md:col-span-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  disabled={isView}
-                  {...register("password")}
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-            ))}
+          {mode === "add" && (
+            <div className="flex flex-col md:col-span-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                disabled={isView}
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col md:col-span-2">
             <Label htmlFor="role">Role</Label>
@@ -248,9 +247,8 @@ export default function UserDialog({ open, mode, currentUser, onOpenChange }) {
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="B">User</SelectItem>
+                <SelectItem value="B">Buyer</SelectItem>
                 <SelectItem value="S">Seller</SelectItem>
-                <SelectItem value="M">Manager</SelectItem>
               </SelectContent>
             </Select>
             {errors.role && (

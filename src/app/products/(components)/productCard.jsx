@@ -1,4 +1,5 @@
-import { Badge } from "@/components/ui/badge";
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import {
@@ -7,13 +8,48 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { addToWishlist } from "@/services/adminUser";
+import { getUser, setUser } from "@/store/authStore";
+import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "sonner";
 import StarRating from "./startRating";
 
 const ProductCard = ({ product, index }) => {
+  const user = getUser();
+  const wishlist = user?.wishlist || [];
+  const isInWishlist = wishlist.includes(product?._id);
+
+  const wishListMutation = useMutation({
+    mutationFn: (productId) => addToWishlist(productId),
+    onSuccess: (data) => {
+      toast.success("Product added to wishlist successfully!");
+      setUser(data?.user);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to add product to wishlist."
+      );
+    },
+  });
+
+  const handleWishlistClick = () => {
+    if (!user) {
+      toast.error("Please log in to add to wishlist.");
+      return;
+    }
+
+    if (isInWishlist) {
+      toast.info("This product is already in your wishlist.");
+      return;
+    }
+
+    wishListMutation.mutate(product?._id);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,7 +70,7 @@ const ProductCard = ({ product, index }) => {
             <motion.div>
               <Image
                 src={product?.images[0] || "/placeholder.svg"}
-                alt={product?.name}
+                alt={product?.name || "Product Image"}
                 fill
                 className="object-cover"
               />
@@ -51,35 +87,29 @@ const ProductCard = ({ product, index }) => {
                         size="icon"
                         variant="secondary"
                         className="rounded-full shadow-md"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleWishlistClick();
+                        }}
+                        disabled={wishListMutation.isLoading}
                       >
-                        <ShoppingCart size={16} />
+                        {wishListMutation.isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Heart
+                            size={16}
+                            className={
+                              isInWishlist ? "fill-red-500 text-red-500" : ""
+                            }
+                          />
+                        )}
                       </Button>
                     </motion.div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Add to cart</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="rounded-full shadow-md"
-                      >
-                        <Heart size={16} />
-                      </Button>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Add to wishlist</p>
+                    <p>
+                      {isInWishlist ? "Already in wishlist" : "Add to wishlist"}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -87,19 +117,21 @@ const ProductCard = ({ product, index }) => {
           </div>
           <CardContent className="p-4">
             <div className="text-sm text-muted-foreground mb-1">
-              {product?.category?.name}
+              {product?.category?.name || "N/A"}
             </div>
             <h3 className="font-medium text-lg truncate group-hover:text-primary transition-colors">
-              {product?.name}
+              {product?.name || "Unknown Product"}
             </h3>
             <StarRating
-              rating={product?.feedbacks?.averageRating}
-              reviews={product?.feedbacks?.count}
+              rating={product?.feedbacks?.averageRating || 0}
+              reviews={product?.feedbacks?.count || 0}
             />
           </CardContent>
           <CardFooter className="p-4 pt-0 flex justify-between items-center">
             <div className="font-semibold text-lg">
-              Rs.{product?.price?.toFixed(2)}
+              {product?.price != null
+                ? `Rs.${product.price.toFixed(2)}`
+                : "N/A"}
             </div>
           </CardFooter>
         </Card>

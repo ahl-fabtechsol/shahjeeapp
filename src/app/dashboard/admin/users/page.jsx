@@ -9,6 +9,7 @@ import {
   Trash2,
   UserCog,
   UserPlus,
+  Verified,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -100,11 +101,30 @@ export default function AdminUsersPage() {
     },
   });
 
+  const verifyMutation = useMutation({
+    mutationFn: ({ id, verfied }) => updateUser(id, { verfied }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Update failed");
+    },
+  });
+
   const handleDeactivate = (id) => {
     toast.promise(updateMutation.mutateAsync({ id, status: "I" }), {
       loading: "Deactivating User…",
       success: "User deactivated successfully!",
       error: (err) => err?.response?.data?.message || "Deactivate failed",
+    });
+  };
+
+  const verifyUser = (id) => {
+    toast.promise(verifyMutation.mutateAsync({ id, verfied: true }), {
+      loading: "Verifying User…",
+      success: "User verified successfully!",
+      error: (err) => err?.response?.data?.message || "Verification failed",
     });
   };
 
@@ -234,6 +254,23 @@ export default function AdminUsersPage() {
     },
 
     {
+      accessorKey: "verfied",
+      header: "Verified",
+      cell: (info) => (
+        <Badge
+          variant="outline"
+          className={
+            info.getValue()
+              ? "bg-green-50 text-green-700 border-green-200"
+              : "bg-gray-50 text-gray-700 border-gray-200"
+          }
+        >
+          {info.getValue() ? "Verified" : "Not Verified"}
+        </Badge>
+      ),
+    },
+
+    {
       accessorKey: "joinDate",
       header: "Join Date",
       cell: (info) =>
@@ -270,6 +307,18 @@ export default function AdminUsersPage() {
             >
               <UserCog className="h-4 w-4 mr-2" /> Edit User
             </DropdownMenuItem>
+
+            {!info.row.original.verified ? (
+              <DropdownMenuItem
+                onClick={() => {
+                  verifyUser(info.row.original._id);
+                }}
+              >
+                <Verified className="h-4 w-4 mr-2" /> Verify User
+              </DropdownMenuItem>
+            ) : (
+              ""
+            )}
 
             <DropdownMenuSeparator />
             {info.row.original.status === "A" ? (
@@ -419,29 +468,6 @@ export default function AdminUsersPage() {
                     <Progress
                       value={
                         (usersData?.results?.filter((u) => u.role === "S")
-                          ?.length /
-                          usersData?.results?.length) *
-                        100
-                      }
-                      className="h-2"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Managers</span>
-                      <span className="font-medium">
-                        {Math.round(
-                          (usersData?.results?.filter((u) => u.role === "M")
-                            ?.length /
-                            usersData?.results?.length) *
-                            100
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        (usersData?.results?.filter((u) => u.role === "M")
                           ?.length /
                           usersData?.results?.length) *
                         100

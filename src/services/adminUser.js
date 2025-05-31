@@ -19,3 +19,20 @@ export const deleteUser = (id) =>
 
 export const resetPassword = (id, payload) =>
   api.patch(`/user/adminResetPassword/${id}`, payload).then((res) => res.data);
+
+export const addToWishlist = (productId) =>
+  api
+    .post(`/user/add-to-wishlist`, {
+      productId,
+    })
+    .then((res) => res.data);
+
+export const removeFromWishlist = (productId) =>
+  api
+    .post(`/user/remove-from-wishlist`, {
+      productId,
+    })
+    .then((res) => res.data);
+
+export const getWishlist = () =>
+  api.get(`/user/wishlist`).then((res) => res.data);

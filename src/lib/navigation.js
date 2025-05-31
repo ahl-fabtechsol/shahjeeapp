@@ -1,4 +1,5 @@
 import {
+  Heart,
   Home,
   MessageSquare,
   Package,
@@ -42,6 +43,11 @@ const adminRoutes = [
     icon: MessageSquare,
   },
   {
+    title: "Wishlist",
+    url: "/dashboard/admin/wishlist",
+    icon: Heart,
+  },
+  {
     title: "Profile",
     url: "/dashboard/admin/profile",
     icon: User,
@@ -64,11 +70,11 @@ const buyerRoutes = [
     url: "/dashboard/buyer/orders",
     icon: ShoppingCart,
   },
-  // {
-  //   title: "Wishlist",
-  //   url: "/dashboard/buyer/wishlist",
-  //   icon: Heart,
-  // },
+  {
+    title: "Wishlist",
+    url: "/dashboard/buyer/wishlist",
+    icon: Heart,
+  },
   {
     title: "Profile",
     url: "/dashboard/buyer/profile",
@@ -102,11 +108,11 @@ const sellerRoutes = [
     url: "/dashboard/seller/orders",
     icon: ShoppingCart,
   },
-  // {
-  //   title: "Followers",
-  //   url: "/dashboard/seller/followers",
-  //   icon: Users,
-  // },
+  {
+    title: "Wishlist",
+    url: "/dashboard/seller/wishlist",
+    icon: Heart,
+  },
   {
     title: "Feedbacks",
     url: "/dashboard/seller/feedbacks",

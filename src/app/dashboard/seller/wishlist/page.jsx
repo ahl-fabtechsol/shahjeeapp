@@ -29,7 +29,7 @@ export default function BuyerWishlistPage() {
     isFetching: isWishlistFetching,
   } = useQuery({
     queryFn: () => getWishlist(),
-    queryKey: ["wishlist"],
+    queryKey: ["sellerWishlist"],
     retry: 1,
     enabled: true,
     staleTime: 1000 * 60 * 5,
@@ -41,7 +41,7 @@ export default function BuyerWishlistPage() {
       toast.success("Product removed from wishlist successfully!");
       setUser(data?.user);
       queryClient.invalidateQueries({
-        queryKey: ["wishlist"],
+        queryKey: ["sellerWishlist"],
       });
     },
     onError: (error) => {
