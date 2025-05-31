@@ -557,49 +557,45 @@ export default function ProductPage({ params }) {
 
         <Carousel className="w-full">
           <CarouselContent className="-ml-2 md:-ml-4">
-            {relatedProducts?.results?.map((item, index) => {
-              item._id === productData?.results[0]?._id ? (
-                ""
-              ) : (
-                <CarouselItem
-                  key={index}
-                  className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+            {relatedProducts?.results?.map((item, index) => (
+              <CarouselItem
+                key={index}
+                className="pl-2 md:pl-4 sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+              >
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <motion.div
-                    whileHover={{ y: -5 }}
-                    transition={{ type: "spring", stiffness: 300 }}
+                  <Link
+                    href={`/products/${item?._id}`}
+                    className="block h-full"
                   >
-                    <Link
-                      href={`/products/${item?._id}`}
-                      className="block h-full"
-                    >
-                      <Card className="overflow-hidden border-border/40 transition-all hover:shadow-md h-full">
-                        <div className="relative aspect-square overflow-hidden">
-                          <Image
-                            src={item?.images[0] || "/placeholder.svg"}
-                            alt="Related product"
-                            fill
-                            className="object-cover transition-transform hover:scale-105 duration-500"
-                          />
+                    <Card className="overflow-hidden border-border/40 transition-all hover:shadow-md h-full">
+                      <div className="relative aspect-square overflow-hidden">
+                        <Image
+                          src={item?.images[0] || "/placeholder.svg"}
+                          alt="Related product"
+                          fill
+                          className="object-cover transition-transform hover:scale-105 duration-500"
+                        />
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-medium truncate">
+                          Related Product {index + 1}
+                        </h3>
+                        <StarRating
+                          rating={item?.feedbacks?.averageRating}
+                          reviews={item?.feedbacks?.count}
+                        />
+                        <div className="font-semibold mt-2">
+                          Rs.{item?.price}
                         </div>
-                        <CardContent className="p-4">
-                          <h3 className="font-medium truncate">
-                            Related Product {index + 1}
-                          </h3>
-                          <StarRating
-                            rating={item?.feedbacks?.averageRating}
-                            reviews={item?.feedbacks?.count}
-                          />
-                          <div className="font-semibold mt-2">
-                            Rs.{item?.price}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </motion.div>
-                </CarouselItem>
-              );
-            })}
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              </CarouselItem>
+            ))}
           </CarouselContent>
           <div className="hidden sm:block">
             <CarouselPrevious className="left-0" />

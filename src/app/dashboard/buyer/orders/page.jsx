@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { OrderDetailModal } from "./components/orderDetailModal";
 
 export default function BuyerOrdersPage() {
   const queryClient = useQueryClient();
@@ -39,6 +40,7 @@ export default function BuyerOrdersPage() {
   const [cancelConfirmation, setCancelConfirmation] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusValue, setStatusValue] = useState("");
+  const [orderDetailModal, setOrderDetailModal] = useState(false);
 
   const {
     data: ordersData,
@@ -204,6 +206,14 @@ export default function BuyerOrdersPage() {
             <DropdownMenuItem
               onClick={() => {
                 setSelectedOrder(info.row.original);
+                setOrderDetailModal(true);
+              }}
+            >
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedOrder(info.row.original);
                 setStatusValue("C");
                 setCancelConfirmation(true);
               }}
@@ -230,6 +240,13 @@ export default function BuyerOrdersPage() {
 
   return (
     <div className="p-4">
+      {orderDetailModal && (
+        <OrderDetailModal
+          isOpen={orderDetailModal}
+          onClose={() => setOrderDetailModal(false)}
+          order={selectedOrder}
+        />
+      )}
       {cancelConfirmation && (
         <ConfirmationModal
           open={cancelConfirmation}

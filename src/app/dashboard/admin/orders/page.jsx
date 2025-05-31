@@ -26,6 +26,7 @@ import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { deleteOrder, getAllOrders } from "@/services/orderService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { OrderDetailModal } from "./components/orderDetailModal";
 
 export default function AdminOrdersPage() {
   const queryClient = useQueryClient();
@@ -38,6 +39,7 @@ export default function AdminOrdersPage() {
   const [limit, setLimit] = useState(10);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [deletecConfimation, setDeleteConfirmation] = useState(false);
+  const [orderDetailModal, setOrderDetailModal] = useState(false);
 
   const {
     data: ordersData,
@@ -199,9 +201,14 @@ export default function AdminOrdersPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            {/* <DropdownMenuItem>
-              <Eye className="h-4 w-4 mr-2" /> View Details
-            </DropdownMenuItem> */}
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedOrder(info.row.original);
+                setOrderDetailModal(true);
+              }}
+            >
+              View Details
+            </DropdownMenuItem>
             <DropdownMenuItem>
               <Package className="h-4 w-4 mr-2" /> Update Status
             </DropdownMenuItem>
@@ -234,6 +241,13 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="p-4">
+      {orderDetailModal && (
+        <OrderDetailModal
+          isOpen={orderDetailModal}
+          onClose={() => setOrderDetailModal(false)}
+          order={selectedOrder}
+        />
+      )}
       {deletecConfimation && (
         <ConfirmationModal
           open={deletecConfimation}

@@ -1,24 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Check,
-  ChevronRight,
   Clock,
-  Filter,
-  Flag,
   Loader2,
   MessageCircle,
-  MessageSquare,
   MoreHorizontal,
-  Search,
   Star,
-  ThumbsDown,
-  ThumbsUp,
   Trash,
 } from "lucide-react";
+import { useState } from "react";
 
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +21,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -38,185 +30,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteFeedback,
   getFeedbacks,
   replyFeedback,
 } from "@/services/feedbackService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
-
-// Sample feedback data
-const feedbacks = [
-  {
-    id: "fb-1001",
-    type: "Product Review",
-    title: "Great quality product!",
-    message:
-      "I'm very impressed with the quality of this product. It exceeded my expectations in every way.",
-    rating: 5,
-    status: "Published",
-    user: {
-      name: "John Smith",
-      email: "john.smith@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    product: "Wireless Headphones X1",
-    date: "2023-05-01",
-    helpful: 24,
-    unhelpful: 2,
-    flagged: false,
-    responded: true,
-  },
-  {
-    id: "fb-1002",
-    type: "Product Review",
-    title: "Disappointed with durability",
-    message:
-      "The product looks nice but broke after just two weeks of normal use. I expected better quality for the price.",
-    rating: 2,
-    status: "Published",
-    user: {
-      name: "Sarah Johnson",
-      email: "sarah.j@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    product: "Smart Watch Pro",
-    date: "2023-04-28",
-    helpful: 18,
-    unhelpful: 3,
-    flagged: false,
-    responded: false,
-  },
-  {
-    id: "fb-1003",
-    type: "Seller Feedback",
-    title: "Excellent customer service",
-    message:
-      "The seller was very responsive and helped me resolve an issue with my order quickly. Would buy from them again!",
-    rating: 5,
-    status: "Published",
-    user: {
-      name: "Michael Brown",
-      email: "michael.b@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    seller: "TechGadgets Store",
-    date: "2023-04-25",
-    helpful: 12,
-    unhelpful: 0,
-    flagged: false,
-    responded: true,
-  },
-  {
-    id: "fb-1004",
-    type: "Platform Feedback",
-    title: "Website navigation issues",
-    message:
-      "I find it difficult to navigate the website on mobile. The menu is confusing and it takes too many clicks to find products.",
-    rating: 3,
-    status: "Under Review",
-    user: {
-      name: "Emily Wilson",
-      email: "emily.w@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    date: "2023-04-22",
-    helpful: 31,
-    unhelpful: 5,
-    flagged: false,
-    responded: false,
-  },
-  {
-    id: "fb-1005",
-    type: "Product Review",
-    title: "Average product, good price",
-    message:
-      "The product is okay for the price. Nothing special but gets the job done.",
-    rating: 3,
-    status: "Published",
-    user: {
-      name: "David Lee",
-      email: "david.l@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    product: "Bluetooth Speaker Mini",
-    date: "2023-04-20",
-    helpful: 7,
-    unhelpful: 2,
-    flagged: false,
-    responded: true,
-  },
-  {
-    id: "fb-1006",
-    type: "Product Review",
-    title: "Inappropriate content",
-    message: "[Content removed due to violation of community guidelines]",
-    rating: 1,
-    status: "Flagged",
-    user: {
-      name: "Anonymous User",
-      email: "anonymous@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    product: "Gaming Laptop X7",
-    date: "2023-04-18",
-    helpful: 0,
-    unhelpful: 15,
-    flagged: true,
-    responded: false,
-  },
-  {
-    id: "fb-1007",
-    type: "Seller Feedback",
-    title: "Slow shipping",
-    message:
-      "The products are good but shipping took much longer than advertised. Better communication would help.",
-    rating: 3,
-    status: "Published",
-    user: {
-      name: "Jennifer Adams",
-      email: "jennifer.a@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    seller: "HomeGoods Plus",
-    date: "2023-04-15",
-    helpful: 19,
-    unhelpful: 3,
-    flagged: false,
-    responded: true,
-  },
-  {
-    id: "fb-1008",
-    type: "Platform Feedback",
-    title: "Great new feature suggestion",
-    message:
-      "I would love to see a feature that allows comparing multiple products side by side. This would make shopping decisions easier.",
-    rating: 4,
-    status: "Under Review",
-    user: {
-      name: "Robert Chen",
-      email: "robert.c@example.com",
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    date: "2023-04-12",
-    helpful: 42,
-    unhelpful: 1,
-    flagged: false,
-    responded: false,
-  },
-];
 
 export default function AdminFeedbacksPage() {
   const queryClient = useQueryClient();

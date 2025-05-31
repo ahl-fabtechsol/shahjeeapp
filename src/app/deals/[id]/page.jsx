@@ -6,9 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-
-import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -18,20 +15,51 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDealsForSite, getDealsForSiteById } from "@/services/dealsService";
 import { createOrder } from "@/services/orderService";
 import { isLoggedIn } from "@/store/authStore";
+import { useCartStore } from "@/store/cartStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export default function DealDetailPage() {
   const loggedIn = isLoggedIn();
+  const clearCart = useCartStore((state) => state.clearCart);
   const params = useParams();
   const router = useRouter();
   const { id } = params;
   const [selectedImage, setSelectedImage] = useState(0);
   const [confirmationModal, setConfirmationModal] = useState(false);
+  const [buyerAddress, setBuyerAddress] = useState({
+    name: "",
+    phone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+  });
+  const [paymentMode, setPaymentMode] = useState("COD");
 
   const {
     data: dealData,
@@ -71,7 +99,12 @@ export default function DealDetailPage() {
     mutationFn: (data) => createOrder(data),
     onSuccess: (data) => {
       toast.success("Order created successfully");
-      window.location.href = data.url;
+      if (paymentMode === "O") {
+        window.location.href = data.url;
+      } else {
+        clearCart();
+        setConfirmationModal(false);
+      }
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to create order");
@@ -83,11 +116,32 @@ export default function DealDetailPage() {
     router.back();
   };
 
-  const handleBuy = async () => {
+  const handleAddressChange = (e) => {
+    setBuyerAddress({ ...buyerAddress, [e.target.name]: e.target.value });
+  };
+
+  const handleBuy = () => {
     if (!loggedIn) {
       toast.error("Please log in to proceed with the order");
       return;
     }
+
+    const requiredFields = [
+      "name",
+      "phone",
+      "addressLine1",
+      "city",
+      "state",
+      "postalCode",
+      "country",
+    ];
+    for (const field of requiredFields) {
+      if (!buyerAddress[field]) {
+        toast.error(`Please fill in ${field} for the buyer address`);
+        return;
+      }
+    }
+
     const products = dealData?.products?.map((item) => ({
       product: item._id,
       quantity: 1,
@@ -101,6 +155,8 @@ export default function DealDetailPage() {
       seller,
       totalAmount,
       itemCount,
+      buyerAddress,
+      paymentMode,
     };
     mutation.mutate(data);
   };
@@ -188,15 +244,196 @@ export default function DealDetailPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-16 py-8">
-      {confirmationModal && (
-        <ConfirmationModal
-          title="Are you sure you want to buy this deal ?"
-          description="You will be redirected to a payemnt page"
-          open={confirmationModal}
-          onOpenChange={setConfirmationModal}
-          onConfirm={handleBuy}
-        />
-      )}
+      <Dialog open={confirmationModal} onOpenChange={setConfirmationModal}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="p-6 pb-0 sticky top-0 bg-background z-10">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <DialogTitle className="text-center text-2xl font-bold">
+                Confirm Order
+              </DialogTitle>
+            </motion.div>
+          </DialogHeader>
+
+          <div className="p-6 space-y-6">
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">Shipping Address</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={buyerAddress.name}
+                    onChange={handleAddressChange}
+                    placeholder="Full Name"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={buyerAddress.phone}
+                    onChange={handleAddressChange}
+                    placeholder="Phone Number"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="addressLine1">Address Line 1</Label>
+                  <Input
+                    id="addressLine1"
+                    name="addressLine1"
+                    value={buyerAddress.addressLine1}
+                    onChange={handleAddressChange}
+                    placeholder="Street Address"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="addressLine2">
+                    Address Line 2 (Optional)
+                  </Label>
+                  <Input
+                    id="addressLine2"
+                    name="addressLine2"
+                    value={buyerAddress.addressLine2}
+                    onChange={handleAddressChange}
+                    placeholder="Apartment, suite, etc."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={buyerAddress.city}
+                    onChange={handleAddressChange}
+                    placeholder="City"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    name="state"
+                    value={buyerAddress.state}
+                    onChange={handleAddressChange}
+                    placeholder="State"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Input
+                    id="postalCode"
+                    name="postalCode"
+                    value={buyerAddress.postalCode}
+                    onChange={handleAddressChange}
+                    placeholder="Postal Code"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    value={buyerAddress.country}
+                    onChange={handleAddressChange}
+                    placeholder="Country"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentMode">Payment Mode</Label>
+                <Select value={paymentMode} onValueChange={setPaymentMode}>
+                  <SelectTrigger id="paymentMode" className="w-full">
+                    <SelectValue placeholder="Select payment mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="COD">Cash on Delivery</SelectItem>
+                    <SelectItem value="O">Online Payment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="font-medium text-lg">Order Summary</h3>
+              <div className="space-y-3">
+                {dealData?.products?.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + index * 0.1 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="relative h-12 w-12 overflow-hidden rounded-md flex-shrink-0">
+                      <Image
+                        src={item?.images[0] || "/placeholder.svg"}
+                        alt={item?.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {item?.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Qty: 1</p>
+                    </div>
+                    <div className="text-sm font-medium">
+                      Rs.{item?.price?.toFixed(2)}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="flex justify-between font-medium">
+              <span>Total</span>
+              <span>Rs.{dealData?.price?.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <DialogFooter className="p-6 pt-0 sticky bottom-0 bg-background z-10">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmationModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBuy}
+              disabled={mutation.isLoading || mutation.isPending}
+            >
+              {mutation.isLoading || mutation.isPending ? (
+                <span className="flex items-center justify-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing…
+                </span>
+              ) : (
+                "Confirm Order"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -376,10 +613,10 @@ export default function DealDetailPage() {
                         </div>
                         <CardContent className="p-4">
                           <div className="font-semibold mt-2">
-                            Rs.{item?.name}
+                            {item?.name || "N/A"}
                           </div>
                           <div className="font-semibold mt-2">
-                            Rs.{item?.price}
+                            Rs.{item?.price?.toFixed(2) || "N/A"}
                           </div>
                         </CardContent>
                       </Card>

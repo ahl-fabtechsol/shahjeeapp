@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SelectIcon } from "@radix-ui/react-select";
+import { OrderDetailModal } from "./components/orderDetailModal";
 
 export default function SellerOrdersPage() {
   const queryClient = useQueryClient();
@@ -58,6 +59,7 @@ export default function SellerOrdersPage() {
   const [deletecConfimation, setDeleteConfirmation] = useState(false);
   const [refundConfirmation, setRefundConfirmation] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("P");
+  const [orderDetailModal, setOrderDetailModal] = useState(false);
 
   const {
     data: ordersData,
@@ -264,9 +266,14 @@ export default function SellerOrdersPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            {/* <DropdownMenuItem>
-              <Eye className="h-4 w-4 mr-2" /> View Details
-            </DropdownMenuItem> */}
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedOrder(info.row.original);
+                setOrderDetailModal(true);
+              }}
+            >
+              View Details
+            </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
               <DropdownMenuSubContent sideOffset={2}>
@@ -329,6 +336,13 @@ export default function SellerOrdersPage() {
 
   return (
     <div className="p-4">
+      {orderDetailModal && (
+        <OrderDetailModal
+          isOpen={orderDetailModal}
+          onClose={() => setOrderDetailModal(false)}
+          order={selectedOrder}
+        />
+      )}
       {deletecConfimation && (
         <ConfirmationModal
           open={deletecConfimation}

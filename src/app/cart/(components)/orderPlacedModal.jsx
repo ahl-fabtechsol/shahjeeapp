@@ -9,6 +9,15 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createOrder } from "@/services/orderService";
 import { isLoggedIn } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
@@ -27,13 +36,28 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
   const deliveryDate = new Date();
   deliveryDate.setDate(deliveryDate.getDate() + 6);
 
+  const [buyerAddress, setBuyerAddress] = useState({
+    name: "",
+    phone: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
+  });
+  const [paymentMode, setPaymentMode] = useState("COD");
+
   const mutation = useMutation({
     mutationFn: (data) => createOrder(data),
     onSuccess: (data) => {
       toast.success("Order created successfully");
-      window.location.href = data.url;
-      clearCart();
-      onClose();
+      if (paymentMode === "O") {
+        window.location.href = data.url;
+      } else {
+        clearCart();
+        onClose();
+      }
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to create order");
@@ -60,11 +84,32 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
     },
   ];
 
+  const handleAddressChange = (e) => {
+    setBuyerAddress({ ...buyerAddress, [e.target.name]: e.target.value });
+  };
+
   const handleSubmit = () => {
     if (!loggedIn) {
       toast.error("Please log in to proceed with the order");
       return;
     }
+
+    const requiredFields = [
+      "name",
+      "phone",
+      "addressLine1",
+      "city",
+      "state",
+      "postalCode",
+      "country",
+    ];
+    for (const field of requiredFields) {
+      if (!buyerAddress[field]) {
+        toast.error(`Please fill in ${field} for the buyer address`);
+        return;
+      }
+    }
+
     const products = orderDetails?.items?.map((item) => ({
       product: item.product._id,
       quantity: item.quantity,
@@ -81,6 +126,8 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
       seller,
       totalAmount,
       itemCount,
+      buyerAddress,
+      paymentMode,
     };
     mutation.mutate(data);
   };
@@ -109,6 +156,17 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
     } else {
       setProgress(0);
       setCurrentStep(0);
+      setBuyerAddress({
+        name: "",
+        phone: "",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        state: "",
+        postalCode: "",
+        country: "",
+      });
+      setPaymentMode("COD");
     }
   }, [isOpen, steps.length]);
 
@@ -116,8 +174,8 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="p-6 pb-0 sticky top-0 bg-background z-10">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -134,10 +192,9 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
           </motion.div>
         </DialogHeader>
 
-        <div className="p-6">
-          <div className="mb-8">
+        <div className="p-6 space-y-6">
+          <div>
             <Progress value={progress} className="h-2" />
-
             <div className="grid grid-cols-4 gap-2 mt-4">
               {steps.map((step, index) => (
                 <motion.div
@@ -167,11 +224,118 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="font-medium">Shipping Address</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={buyerAddress.name}
+                  onChange={handleAddressChange}
+                  placeholder="Full Name"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={buyerAddress.phone}
+                  onChange={handleAddressChange}
+                  placeholder="Phone Number"
+                  required
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="addressLine1">Address Line 1</Label>
+                <Input
+                  id="addressLine1"
+                  name="addressLine1"
+                  value={buyerAddress.addressLine1}
+                  onChange={handleAddressChange}
+                  placeholder="Street Address"
+                  required
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
+                <Input
+                  id="addressLine2"
+                  name="addressLine2"
+                  value={buyerAddress.addressLine2}
+                  onChange={handleAddressChange}
+                  placeholder="Apartment, suite, etc."
+                />
+              </div>
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={buyerAddress.city}
+                  onChange={handleAddressChange}
+                  placeholder="City"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  value={buyerAddress.state}
+                  onChange={handleAddressChange}
+                  placeholder="State"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="postalCode">Postal Code</Label>
+                <Input
+                  id="postalCode"
+                  name="postalCode"
+                  value={buyerAddress.postalCode}
+                  onChange={handleAddressChange}
+                  placeholder="Postal Code"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  name="country"
+                  value={buyerAddress.country}
+                  onChange={handleAddressChange}
+                  placeholder="Country"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentMode">Payment Mode</Label>
+              <Select value={paymentMode} onValueChange={setPaymentMode}>
+                <SelectTrigger id="paymentMode" className="w-full">
+                  <SelectValue placeholder="Select payment mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="COD">Cash on Delivery</SelectItem>
+                  <SelectItem value="O">Online Payment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Separator />
 
           <div className="space-y-4">
             <h3 className="font-medium">Order Summary</h3>
-
             <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
               <AnimatePresence>
                 {orderDetails?.items?.map((item, index) => (
@@ -205,13 +369,13 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
                 ))}
               </AnimatePresence>
             </div>
+          </div>
 
-            <Separator className="my-4" />
+          <Separator />
 
-            <div className="flex justify-between font-medium">
-              <span>Total</span>
-              <span>Rs.{orderDetails.total.toFixed(2)}</span>
-            </div>
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
+            <span>Rs.{orderDetails.total.toFixed(2)}</span>
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
@@ -225,7 +389,7 @@ export function OrderPlacedModal({ isOpen, onClose, orderDetails }) {
                   Processing…
                 </span>
               ) : (
-                "Pay Order"
+                "Confirm Order"
               )}
             </Button>
           </div>
