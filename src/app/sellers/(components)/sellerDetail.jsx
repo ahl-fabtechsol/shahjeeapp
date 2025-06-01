@@ -276,7 +276,7 @@ export function SellerDetail({ sellerId }) {
                 <MapPin className="h-5 w-5 text-muted-foreground shrink-0" />
                 <span>{storeData?.store?.address}</span>
               </div>
-              <Button className="w-full mt-2">Contact Seller</Button>
+              {/* <Button className="w-full mt-2">Contact Seller</Button> */}
             </CardContent>
           </Card>
         </motion.div>

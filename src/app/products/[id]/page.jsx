@@ -6,8 +6,6 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
-  Heart,
-  Share2,
   ShoppingCart,
   Star,
 } from "lucide-react";
@@ -15,6 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -27,23 +26,18 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   getAllProductsSite,
   getProductDetailSite,
 } from "@/services/productService";
 import { useCartStore } from "@/store/cartStore";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import StarRating from "../(components)/startRating";
 import FeedbackDialog from "../(components)/feedbackDialog";
+import StarRating from "../(components)/startRating";
 
 export default function ProductPage({ params }) {
+  const router = useRouter();
   const addToCart = useCartStore((state) => state.addToCart);
   const cart = useCartStore((state) => state.cart);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -211,57 +205,6 @@ export default function ProductPage({ params }) {
               </motion.div>
             </AnimatePresence>
 
-            <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="rounded-full shadow-md"
-                        onClick={() => setWishlist(!wishlist)}
-                      >
-                        <Heart
-                          className={`h-4 w-4 ${
-                            wishlist ? "fill-red-500 text-red-500" : ""
-                          }`}
-                        />
-                      </Button>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Add to wishlist</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="rounded-full shadow-md"
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Share product</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
             <div className="absolute left-3 top-1/2 -translate-y-1/2">
               <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                 <Button
@@ -327,6 +270,22 @@ export default function ProductPage({ params }) {
 
         <motion.div variants={staggerChildren} className="space-y-6">
           <motion.div variants={slideUp}>
+            <div
+              className="flex items-center gap-3 mb-4 cursor-pointer"
+              onClick={() =>
+                router.push(
+                  `/sellers/${productData?.results[0]?.storeData?._id}`
+                )
+              }
+            >
+              <Avatar>
+                <AvatarImage src={productData?.results[0]?.storeData?.image} />
+                <AvatarFallback>
+                  {productData?.results[0]?.storeData?.name[0]}
+                </AvatarFallback>
+              </Avatar>
+              <p>{productData?.results[0]?.storeData?.name}</p>
+            </div>
             <h1 className="text-3xl font-bold">
               {productData?.results[0]?.name}
             </h1>

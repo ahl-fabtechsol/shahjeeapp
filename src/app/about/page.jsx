@@ -7,19 +7,19 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const team = [
   {
-    name: "Ayaan Ahmed",
+    name: "Ali Akbar",
     role: "Co-Founder & CEO",
     image:
       "https://images.unsplash.com/photo-1603415526960-f8f0a2a5e36f?q=80&w=800",
   },
   {
-    name: "Sarah Khan",
+    name: "Memon",
     role: "CTO",
     image:
       "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=800",
   },
   {
-    name: "Zain Raza",
+    name: "Hasni",
     role: "Product Lead",
     image:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800",
